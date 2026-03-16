@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valuation Form – AMK Portal</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body { background: var(--gray-100); }
+        .form-topbar {
+            background: var(--white);
+            border-bottom: 1px solid var(--gray-200);
+            padding: 0.75rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 64px;
+            z-index: 50;
+        }
+        .form-layout {
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 0;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .sidebar-fixed {
+            position: sticky;
+            top: 113px;
+            height: calc(100vh - 113px);
+            overflow-y: auto;
+            background: var(--white);
+            border-right: 1px solid var(--gray-200);
+            padding: 1.5rem 0;
+        }
+        .form-main {
+            padding: 2rem;
+            min-height: calc(100vh - 113px);
+        }
+        .section-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 0.65rem 1.5rem;
+            font-size: 0.845rem;
+            color: var(--gray-600);
+            cursor: pointer;
+            transition: all var(--transition);
+            border-left: 3px solid transparent;
+            font-family: var(--font-body);
+        }
+        .section-nav-item:hover { background: var(--gray-100); color: var(--navy); }
+        .section-nav-item.active {
+            background: rgba(201,168,76,0.08);
+            color: var(--navy);
+            border-left-color: var(--gold);
+            font-weight: 600;
+        }
+        .section-nav-item .nav-icon { font-size: 1rem; }
+        .report-section { display: none; animation: fadeIn 0.2s ease; }
+        .report-section.active { display: block; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+        .section-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--gray-200);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        .section-heading {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--navy);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--gray-100);
+        }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+        .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.25rem; }
+        @media(max-width:900px) {
+            .form-layout { grid-template-columns: 1fr; }
+            .sidebar-fixed { position: static; height: auto; }
+            .form-row, .form-row-3 { grid-template-columns: 1fr; }
+        }
+        .pill-group { display: flex; flex-wrap: wrap; gap: 8px; padding-top: 4px; }
+        .pill {
+            padding: 5px 14px;
+            border-radius: 999px;
+            border: 1.5px solid var(--gray-200);
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--gray-600);
+            cursor: pointer;
+            transition: all var(--transition);
+            user-select: none;
+        }
+        .pill:hover { border-color: var(--gold); color: var(--navy); }
+        .pill.checked { background: var(--navy); border-color: var(--navy); color: white; }
+        .save-indicator { font-size: 0.8rem; color: var(--gray-400); display: flex; align-items: center; gap: 6px; }
+        .save-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--gray-400); }
+        .save-dot.saved { background: var(--success); }
+        .save-dot.saving { background: var(--gold); animation: pulse 1s infinite; }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+        .nav-section-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--gray-400);
+            padding: 1rem 1.5rem 0.4rem;
+        }
+        .valuation-highlight {
+            background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
+        }
+        .valuation-highlight .vh-item label { display: block; font-size: 0.75rem; color: var(--gray-400); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .valuation-highlight .vh-item input { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: var(--radius-sm); padding: 0.5rem 0.75rem; width: 100%; font-family: var(--font-display); font-size: 1.3rem; font-weight: 600; outline: none; }
+        .valuation-highlight .vh-item input::placeholder { color: rgba(255,255,255,0.3); }
+        .valuation-highlight .vh-item input:read-only { color: var(--gold); cursor: default; }
+    </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="navbar-brand">AMK <span>Associates</span></div>
+    <div class="navbar-right">
+        <span class="save-indicator">
+            <span class="save-dot" id="save-dot"></span>
+            <span id="save-status">Not saved</span>
+        </span>
+        <a href="dashboard.html" class="btn btn-outline btn-sm">Dashboard</a>
+        <button class="btn btn-outline btn-sm" onclick="Auth.logout()">Sign Out</button>
+    </div>
+</nav>
+
+<!-- TOP BAR -->
+<div class="form-topbar">
+    <div style="display:flex; align-items:center; gap:16px;">
+        <strong style="font-family:var(--font-display); font-size:1.1rem;" id="form-title">New Valuation Report</strong>
+        <span id="status-indicator" class="status-badge" style="display:none;"></span>
+    </div>
+    <div style="display:flex; gap:8px; align-items:center;">
+        <button class="btn btn-outline btn-sm" onclick="saveDraft()">Save Draft</button>
+        <button class="btn btn-primary btn-sm" onclick="submitReport()">Submit Report</button>
+    </div>
+</div>
+
+<!-- LAYOUT -->
+<div class="form-layout">
+
+    <!-- SIDEBAR NAV -->
+    <div class="sidebar-fixed">
+        <div class="nav-section-label">Cover</div>
+        <div class="section-nav-item active" onclick="showSection('sec-cover', this)">
+            <span class="nav-icon">📋</span> Cover Details
+        </div>
+        <div class="section-nav-item" onclick="showSection('sec-letter', this)">
+            <span class="nav-icon">✉️</span> Cover Letter
+        </div>
+
+        <div class="nav-section-label">Vehicle</div>
+        <div class="section-nav-item" onclick="showSection('sec-vehicle', this)">
+            <span class="nav-icon">🚗</span> Vehicle Details
+        </div>
+        <div class="section-nav-item" onclick="showSection('sec-registration', this)">
+            <span class="nav-icon">📝</span> Registration
+        </div>
+
+        <div class="nav-section-label">Inspection</div>
+        <div class="section-nav-item" onclick="showSection('sec-interior', this)">
+            <span class="nav-icon">🪑</span> Interior
+        </div>
+        <div class="section-nav-item" onclick="showSection('sec-exterior', this)">
+            <span class="nav-icon">🔧</span> Exterior
+        </div>
+        <div class="section-nav-item" onclick="showSection('sec-assessment', this)">
+            <span class="nav-icon">📊</span> Assessment
+        </div>
+
+        <div class="nav-section-label">Documents</div>
+        <div class="section-nav-item" onclick="showSection('sec-photos', this)">
+            <span class="nav-icon">📷</span> Photos
+        </div>
+        <div class="section-nav-item" onclick="showSection('sec-qr', this)">
+            <span class="nav-icon">📲</span> QR Code
+        </div>
+
+        <div class="nav-section-label">BRTA Verification</div>
+        <div class="section-nav-item" onclick="showSection('sec-brta', this)">
+            <span class="nav-icon">🏛️</span> BRTA Registration
+        </div>
+    </div>
+
+    <!-- MAIN FORM AREA -->
+    <div class="form-main">
+
+        <!-- SECTION: Cover Details -->
+        <div class="report-section active" id="sec-cover">
+            <div class="section-card">
+                <div class="section-heading">📋 Cover Details</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Reference Account Name</label>
+                        <input type="text" class="form-control" data-field="reference_account_name" placeholder="Enter account name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">File Reference Number</label>
+                        <input type="text" class="form-control" data-field="file_reference_number" placeholder="e.g. AMK/BBPLC/2026/001">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Referred By</label>
+                        <input type="text" class="form-control" data-field="referred_by" placeholder="Bank or individual name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Date of Inspection</label>
+                        <input type="date" class="form-control" data-field="date_of_inspection">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Recipient Name</label>
+                        <select class="form-control" data-field="recipient_name" onchange="updateRecipient(this)">
+                            <option value="">Select or type below</option>
+                            <option value="The Manager" data-address="BRAC Bank PLC.&#10;Anik Tower, 220/B&#10;Bir Uttam Mir Shawkat Sarak&#10;Tejgaon, Gulshan Link Road, Dhaka">The Manager – BRAC Bank</option>
+                            <option value="Mr. S. M. Mamun Khandaker" data-address="Officer, Credit Initiation &amp; Processing&#10;The City Bank PLC.&#10;PALMAL Tower (16th Floor)&#10;Gulshan Avenue, Gulshan-1, Dhaka-1212">Mr. S. M. Mamun Khandaker – City Bank</option>
+                            <option value="Mr. Md. Motiur Rahman" data-address="Head, Retail Credit Documentation&#10;Eastern Bank PLC.&#10;Z. N Tower (5th Floor)&#10;House#2, Road#8, Gulshan-01, Dhaka">Mr. Md. Motiur Rahman – Eastern Bank</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Recipient Address</label>
+                        <textarea class="form-control" data-field="recipient_address" rows="4" placeholder="Designation&#10;Bank Name&#10;Address"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION: Cover Letter -->
+        <div class="report-section" id="sec-letter">
+            <div class="section-card">
+                <div class="section-heading">✉️ Cover Letter</div>
+                <div class="valuation-highlight">
+                    <div class="vh-item">
+                        <label>Maximum Price (BDT)</label>
+                        <input type="text" data-field="max_price" placeholder="0" oninput="fmtCurrency(this); calcFSV()">
+                    </div>
+                    <div class="vh-item">
+                        <label>Assessed Price (BDT)</label>
+                        <input type="text" data-field="assessed_price" placeholder="0" oninput="fmtCurrency(this); calcFSV()">
+                    </div>
+                    <div class="vh-item">
+                        <label>Forced Sale Value (80%)</label>
+                        <input type="text" data-field="forced_sale_value" placeholder="Auto-calculated" readonly>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Letter Reference</label>
+                        <input type="text" class="form-control" data-field="letter_ref" placeholder="AMK/BBPLC/2026/...">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Letter Date</label>
+                        <input type="date" class="form-control" data-field="letter_date">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Communication Medium</label>
+                        <input type="text" class="form-control" data-field="comm_medium" placeholder="e.g. email, phone">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Communication Date</label>
+                        <input type="date" class="form-control" data-field="comm_date">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Communication Person</label>
+                    <input type="text" class="form-control" data-field="comm_person" placeholder="Name of person who referred">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Valuer 1</label>
+                        <select class="form-control" data-field="valuer_1_name" onchange="updateValuer(1, this)">
+                            <option value="">Select Valuer</option>
+                            <option value="Engr. Abdullah Al Rafi" data-desig="Executive- Inspection, Survey &amp; Valuation">Engr. Abdullah Al Rafi</option>
+                            <option value="Md Towhid Islam" data-desig="Senior Officer- Inspection, Survey &amp; Valuation">Md Towhid Islam</option>
+                            <option value="Alif Ahmed" data-desig="Assistant Executive- Inspection, Survey &amp; Valuation">Alif Ahmed</option>
+                            <option value="MD Junaid Hasan" data-desig="Officer- Inspection, Survey &amp; Valuation">MD Junaid Hasan</option>
+                            <option value="Utsha Kar Ork" data-desig="Sr. Officer- Inspection, Survey &amp; Valuation">Utsha Kar Ork</option>
+                            <option value="Sazzadur Rahman" data-desig="Senior Officer- Inspection, Survey &amp; Valuation">Sazzadur Rahman</option>
+                            <option value="Shahriar Alam" data-desig="Officer- Inspection, Survey &amp; Valuation">Shahriar Alam</option>
+                            <option value="Md Mesbah Uddin" data-desig="Manager- Inspection, Survey &amp; Valuation">Md Mesbah Uddin</option>
+                            <option value="Md. Sahed Alam" data-desig="Sr. Officer- Inspection, Survey &amp; Valuation">Md. Sahed Alam</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Valuer 1 Designation</label>
+                        <input type="text" class="form-control" data-field="valuer_1_designation" id="desig-1" placeholder="Auto-filled">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Valuer 2</label>
+                        <select class="form-control" data-field="valuer_2_name" onchange="updateValuer(2, this)">
+                            <option value="">Select Valuer</option>
+                            <option value="Engr. Abdullah Al Rafi" data-desig="Executive- Inspection, Survey &amp; Valuation">Engr. Abdullah Al Rafi</option>
+                            <option value="Md Towhid Islam" data-desig="Senior Officer- Inspection, Survey &amp; Valuation">Md Towhid Islam</option>
+                            <option value="Alif Ahmed" data-desig="Assistant Executive- Inspection, Survey &amp; Valuation">Alif Ahmed</option>
+                            <option value="MD Junaid Hasan" data-desig="Officer- Inspection, Survey &amp; Valuation">MD Junaid Hasan</option>
+                            <option value="Utsha Kar Ork" data-desig="Sr. Officer- Inspection, Survey &amp; Valuation">Utsha Kar Ork</option>
+                            <option value="Sazzadur Rahman" data-desig="Senior Officer- Inspection, Survey &amp; Valuation">Sazzadur Rahman</option>
+                            <option value="Shahriar Alam" data-desig="Officer- Inspection, Survey &amp; Valuation">Shahriar Alam</option>
+                            <option value="Md Mesbah Uddin" data-desig="Manager- Inspection, Survey &amp; Valuation">Md Mesbah Uddin</option>
+                            <option value="Md. Sahed Alam" data-desig="Sr. Officer- Inspection, Survey &amp; Valuation">Md. Sahed Alam</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Valuer 2 Designation</label>
+                        <input type="text" class="form-control" data-field="valuer_2_designation" id="desig-2" placeholder="Auto-filled">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION: Vehicle Details -->
+        <div class="report-section" id="sec-vehicle">
+            <div class="section-card">
+                <div class="section-heading">🚗 Vehicle Details</div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Manufacturing Company</label><input type="text" class="form-control" data-field="manufacturer" placeholder="e.g. Toyota"></div>
+                    <div class="form-group"><label class="form-label">Trim / Package</label><input type="text" class="form-control" data-field="trim_package" placeholder="X / L / G etc."></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Vehicle Model</label><input type="text" class="form-control" data-field="vehicle_model" placeholder="e.g. Allion 260"></div>
+                    <div class="form-group"><label class="form-label">Manufacturing Year</label><input type="text" class="form-control" data-field="manufacturing_year" placeholder="e.g. 2019"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Country of Origin</label><input type="text" class="form-control" data-field="country_of_origin" placeholder="e.g. Japan"></div>
+                    <div class="form-group"><label class="form-label">Cubic Capacity (CC)</label><input type="text" class="form-control" data-field="cubic_capacity" placeholder="e.g. 1800"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Engine Number</label><input type="text" class="form-control" data-field="engine_number"></div>
+                    <div class="form-group"><label class="form-label">Chassis Number</label><input type="text" class="form-control" data-field="chassis_number"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Color</label><input type="text" class="form-control" data-field="color"></div>
+                    <div class="form-group">
+                        <label class="form-label">Type of Vehicle</label>
+                        <div class="pill-group" data-checkbox-group="vehicle_type">
+                            <span class="pill" data-value="Non-Hybrid" onclick="togglePill(this)">Non-Hybrid</span>
+                            <span class="pill" data-value="Hybrid" onclick="togglePill(this)">Hybrid</span>
+                            <span class="pill" data-value="Electric" onclick="togglePill(this)">Electric</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Fuel Used</label>
+                    <div class="pill-group" data-checkbox-group="fuel_used">
+                        <span class="pill" data-value="Petrol" onclick="togglePill(this)">Petrol</span>
+                        <span class="pill" data-value="Diesel" onclick="togglePill(this)">Diesel</span>
+                        <span class="pill" data-value="CNG" onclick="togglePill(this)">CNG</span>
+                        <span class="pill" data-value="Octane" onclick="togglePill(this)">Octane</span>
+                        <span class="pill" data-value="Electric" onclick="togglePill(this)">Electric</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION: Registration -->
+        <div class="report-section" id="sec-registration">
+            <div class="section-card">
+                <div class="section-heading">📝 Registration Details</div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Current Owner Name</label><input type="text" class="form-control" data-field="owner_name"></div>
+                    <div class="form-group"><label class="form-label">Registration Number</label><input type="text" class="form-control" data-field="registration_number"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Registration ID</label><input type="text" class="form-control" data-field="registration_id"></div>
+                    <div class="form-group"><label class="form-label">Registration Date</label><input type="date" class="form-control" data-field="registration_date"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Ownership Transfer Status</label><input type="text" class="form-control" data-field="ownership_transfer"></div>
+                    <div class="form-group">
+                        <label class="form-label">Hire Purchase</label>
+                        <div class="pill-group" data-checkbox-group="hire_purchase">
+                            <span class="pill" data-value="Yes" onclick="togglePill(this)">Yes</span>
+                            <span class="pill" data-value="No" onclick="togglePill(this)">No</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Insurance Policy Number &amp; Date</label><input type="text" class="form-control" data-field="insurance_policy"></div>
+                    <div class="form-group"><label class="form-label">Tax Clearance Certificate Number</label><input type="text" class="form-control" data-field="tax_clearance_number"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Tax Clearance Up To</label><input type="date" class="form-control" data-field="tax_clearance_date"></div>
+                    <div class="form-group"><label class="form-label">Fitness Certificate Number</label><input type="text" class="form-control" data-field="fitness_cert_number"></div>
+                </div>
+                <div class="form-group" style="max-width:50%;"><label class="form-label">Fitness Validity Up To</label><input type="date" class="form-control" data-field="fitness_validity"></div>
+            </div>
+        </div>
+
+        <!-- SECTION: Interior -->
+        <div class="report-section" id="sec-interior">
+            <div class="section-card">
+                <div class="section-heading">🪑 Interior Inspection</div>
+                <div id="interior-checks"></div>
+                <div class="form-row" style="margin-top:1rem;">
+                    <div class="form-group"><label class="form-label">No. of Seats</label><input type="text" class="form-control" data-field="num_seats"></div>
+                    <div class="form-group"><label class="form-label">Total Mileage (as per Dashboard)</label><input type="text" class="form-control" data-field="total_mileage"></div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Additional Accessories</label>
+                    <div class="pill-group" data-checkbox-group="interior_accessories_yn" data-toggle-target="interior-acc-detail">
+                        <span class="pill" data-value="Yes" onclick="togglePill(this);toggleDetail('interior-acc-detail',this)">Yes</span>
+                        <span class="pill" data-value="No" onclick="togglePill(this);toggleDetail('interior-acc-detail',this)">No</span>
+                    </div>
+                </div>
+                <div class="form-group" id="interior-acc-detail" style="display:none;">
+                    <label class="form-label">Accessories Detail</label>
+                    <textarea class="form-control" data-field="interior_accessories" rows="2" placeholder="Describe accessories"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION: Exterior -->
+        <div class="report-section" id="sec-exterior">
+            <div class="section-card">
+                <div class="section-heading">🔧 Exterior Inspection</div>
+                <div id="exterior-checks"></div>
+                <div class="form-group">
+                    <label class="form-label">Additional Accessories</label>
+                    <div class="pill-group" data-checkbox-group="exterior_accessories_yn" data-toggle-target="exterior-acc-detail">
+                        <span class="pill" data-value="Yes" onclick="togglePill(this);toggleDetail('exterior-acc-detail',this)">Yes</span>
+                        <span class="pill" data-value="No" onclick="togglePill(this);toggleDetail('exterior-acc-detail',this)">No</span>
+                    </div>
+                </div>
+                <div class="form-group" id="exterior-acc-detail" style="display:none;">
+                    <label class="form-label">Accessories Detail</label>
+                    <textarea class="form-control" data-field="exterior_accessories" rows="2" placeholder="Describe accessories"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION: Assessment -->
+        <div class="report-section" id="sec-assessment">
+            <div class="section-card">
+                <div class="section-heading">📊 Overall Assessment</div>
+                <div id="assessment-checks"></div>
+                <div class="form-group" style="margin-top:1rem;">
+                    <label class="form-label">Known Defects – Details</label>
+                    <textarea class="form-control" data-field="known_defects_detail" rows="2" placeholder="Describe if any"></textarea>
+                </div>
+            </div>
+            <div class="section-card">
+                <div class="section-heading">🕐 Inspection Particulars</div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Date of Inspection</label><input type="date" class="form-control" data-field="inspection_date"></div>
+                    <div class="form-group"><label class="form-label">Inspection Time</label><input type="time" class="form-control" data-field="inspection_time"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Location</label><input type="text" class="form-control" data-field="inspection_location"></div>
+                    <div class="form-group"><label class="form-label">Contact Person Presented</label><input type="text" class="form-control" data-field="contact_person"></div>
+                </div>
+                <div class="form-group" style="max-width:50%;"><label class="form-label">Name of Verification Agent</label><input type="text" class="form-control" data-field="verification_agent"></div>
+            </div>
+        </div>
+
+        <!-- SECTION: PHOTOS -->
+        <div class="report-section" id="sec-photos">
+            <div class="section-card">
+                <div class="section-heading">📷 Vehicle Photos</div>
+                <p style="margin-bottom:1.5rem;color:var(--gray-600);font-size:0.875rem;">Upload photos of the vehicle. Images are saved with the report and included in the PDF.</p>
+                <div id="photo-upload-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;"></div>
+                <label style="display:inline-flex;align-items:center;gap:8px;padding:0.6rem 1.2rem;background:var(--gray-100);border:2px dashed var(--gray-200);border-radius:var(--radius-sm);cursor:pointer;font-size:0.875rem;color:var(--gray-600);" id="photo-upload-label">
+                    <span style="font-size:1.2rem;">📁</span> Choose Photos (up to 12)
+                    <input type="file" id="photo-input" accept="image/*" multiple style="display:none;" onchange="handlePhotoUpload(this)">
+                </label>
+                <p style="margin-top:0.5rem;font-size:0.75rem;color:var(--gray-400);">JPG, PNG supported. Max 12 photos, 2MB each. Stored as base64 in the report.</p>
+            </div>
+        </div>
+
+        <!-- SECTION: QR CODE -->
+        <div class="report-section" id="sec-qr">
+            <div class="section-card">
+                <div class="section-heading">📲 QR Code / Document Link</div>
+                <p style="margin-bottom:1.5rem;color:var(--gray-600);font-size:0.875rem;">Upload a QR code image</p>
+                <div style="display:flex;gap:2rem;align-items:flex-start;flex-wrap:wrap;">
+                    <div>
+                        <div id="qr-preview-container" style="display:none;margin-bottom:1rem;">
+                            <img id="qr-preview-img" src="" style="width:160px;height:160px;object-fit:contain;border:2px solid var(--gray-200);border-radius:var(--radius-md);padding:8px;background:white;" alt="QR Code">
+                            <div style="margin-top:0.5rem;display:flex;gap:8px;align-items:center;">
+                                <span id="qr-filename" style="font-size:0.75rem;color:var(--gray-400);"></span>
+                                <button onclick="removeQR()" style="background:var(--danger);color:white;border:none;border-radius:4px;padding:2px 8px;cursor:pointer;font-size:0.75rem;">Remove</button>
+                            </div>
+                        </div>
+                        <label style="display:inline-flex;align-items:center;gap:8px;padding:0.6rem 1.2rem;background:var(--gray-100);border:2px dashed var(--gray-200);border-radius:var(--radius-sm);cursor:pointer;font-size:0.875rem;color:var(--gray-600);" id="qr-upload-label">
+                            <span style="font-size:1.2rem;">📲</span> Upload QR Code Image
+                            <input type="file" id="qr-input" accept="image/*" style="display:none;" onchange="handleQRUpload(this)">
+                        </label>
+                        <p style="margin-top:0.5rem;font-size:0.75rem;color:var(--gray-400);">PNG or JPG. Max 1MB.</p>
+                    </div>
+                    <div style="flex:1;min-width:200px;">
+                        <div class="form-group"><label class="form-label">QR Code Label / Caption</label><input type="text" class="form-control" data-field="qr_label" placeholder="e.g. BRTA Verification Link"></div>
+                        <div class="form-group"><label class="form-label">QR Code URL (optional, printed below QR)</label><input type="text" class="form-control" data-field="qr_url" placeholder="https://..."></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION: BRTA -->
+        <div class="report-section" id="sec-brta">
+            <div class="section-card">
+                <div class="section-heading">🏛️ BRTA Registration Report</div>
+                <div style="background:var(--gray-100);border-radius:var(--radius-sm);padding:1rem;margin-bottom:1.5rem;font-size:0.85rem;color:var(--gray-600);">
+                    ℹ️ Fill in the data exactly as shown on the BRTA Registration Acknowledgement Slip.
+                </div>
+                <div class="form-row-3">
+                    <div class="form-group"><label class="form-label">Registration Id</label><input type="text" class="form-control" data-field="brta_registration_id"></div>
+                    <div class="form-group"><label class="form-label">Registration No</label><input type="text" class="form-control" data-field="brta_registration_no"></div>
+                    <div class="form-group"><label class="form-label">Previous Registration No</label><input type="text" class="form-control" data-field="brta_prev_reg_no"></div>
+                </div>
+                <div class="form-row-3">
+                    <div class="form-group"><label class="form-label">Registration Date</label><input type="date" class="form-control" data-field="brta_reg_date"></div>
+                    <div class="form-group"><label class="form-label">Application Status</label><input type="text" class="form-control" data-field="brta_app_status"></div>
+                    <div class="form-group"><label class="form-label">Current Authority</label><input type="text" class="form-control" data-field="brta_authority"></div>
+                </div>
+                <div class="form-row-3">
+                    <div class="form-group"><label class="form-label">Hire</label><input type="text" class="form-control" data-field="brta_hire"></div>
+                    <div class="form-group"><label class="form-label">Hire Purchase</label><input type="text" class="form-control" data-field="brta_hire_purchase"></div>
+                    <div class="form-group"><label class="form-label">Ownership Type</label><input type="text" class="form-control" data-field="brta_ownership_type"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Bank Name</label><input type="text" class="form-control" data-field="brta_bank_name"></div>
+                    <div class="form-group"><label class="form-label">Bank Address</label><input type="text" class="form-control" data-field="brta_bank_address"></div>
+                </div>
+                <hr style="margin:1.5rem 0;border-color:var(--gray-200);">
+                <div class="form-row-3">
+                    <div class="form-group"><label class="form-label">Chassis No</label><input type="text" class="form-control" data-field="brta_chassis_no"></div>
+                    <div class="form-group"><label class="form-label">Engine No</label><input type="text" class="form-control" data-field="brta_engine_no"></div>
+                    <div class="form-group"><label class="form-label">Manufacture Year</label><input type="text" class="form-control" data-field="brta_mfg_year"></div>
+                </div>
+                <div class="form-row-3">
+                    <div class="form-group"><label class="form-label">Vehicle Class</label><input type="text" class="form-control" data-field="brta_veh_class"></div>
+                    <div class="form-group"><label class="form-label">Vehicle Type</label><input type="text" class="form-control" data-field="brta_veh_type"></div>
+                    <div class="form-group"><label class="form-label">No of Seat</label><input type="text" class="form-control" data-field="brta_num_seats"></div>
+                </div>
+                <div class="form-row-3">
+                    <div class="form-group"><label class="form-label">Manufacturer</label><input type="text" class="form-control" data-field="brta_manufacturer"></div>
+                    <div class="form-group"><label class="form-label">Maker's Country</label><input type="text" class="form-control" data-field="brta_country"></div>
+                    <div class="form-group"><label class="form-label">Color</label><input type="text" class="form-control" data-field="brta_color"></div>
+                </div>
+                <div class="form-row-3">
+                    <div class="form-group"><label class="form-label">Horse Power</label><input type="text" class="form-control" data-field="brta_hp"></div>
+                    <div class="form-group"><label class="form-label">RPM</label><input type="text" class="form-control" data-field="brta_rpm"></div>
+                    <div class="form-group"><label class="form-label">CC</label><input type="text" class="form-control" data-field="brta_cc"></div>
+                </div>
+                <div class="form-row-3">
+                    <div class="form-group"><label class="form-label">Unladen Weight</label><input type="text" class="form-control" data-field="brta_unladen_weight"></div>
+                    <div class="form-group"><label class="form-label">Max Weight</label><input type="text" class="form-control" data-field="brta_max_weight"></div>
+                    <div class="form-group"><label class="form-label">No of Cylinders</label><input type="text" class="form-control" data-field="brta_cylinders"></div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label class="form-label">Vehicle Model</label><input type="text" class="form-control" data-field="brta_vehicle_model"></div>
+                    <div class="form-group"><label class="form-label">Mileage</label><input type="text" class="form-control" data-field="brta_mileage"></div>
+                </div>
+                <hr style="margin:1.5rem 0;border-color:var(--gray-200);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                    <strong style="font-family:var(--font-display);">Owner Information</strong>
+                    <button class="btn btn-outline btn-sm" onclick="addOwnerRow()">+ Add Owner</button>
+                </div>
+                <div id="owner-rows">
+                    <div class="form-row-3 owner-row" style="margin-bottom:1rem;">
+                        <div class="form-group"><label class="form-label">Owner's Name</label><input type="text" class="form-control" data-field="owner_1_name"></div>
+                        <div class="form-group"><label class="form-label">Father's Name</label><input type="text" class="form-control" data-field="owner_1_father"></div>
+                        <div class="form-group"><label class="form-label">Owner's Address</label><input type="text" class="form-control" data-field="owner_1_address"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- end form-main -->
+</div><!-- end form-layout -->
+
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- Shared modules — to change PDF edit pdf-template.js, to change auth edit auth.js -->
+<script src="config.js"></script>
+<script src="auth.js"></script>
+<script src="ui.js"></script>
+<script src="core/db.js"></script>
+<script src="core/pdf-engine.js"></script>
+<script src="forms/vehicle-valuation/pdf-template.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  form.html  —  page-specific logic only
+//  To change PDF layout  → forms/vehicle-valuation/pdf-template.js
+//  To change auth        → auth.js
+//  To change DB queries  → core/db.js
+// ═══════════════════════════════════════════════════════════
+
+// ── Section navigation ───────────────────────────────────────
+function showSection(id, navItem) {
+    document.querySelectorAll('.report-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.section-nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    if (navItem) navItem.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Pill checkboxes ──────────────────────────────────────────
+function togglePill(el) {
+    const group = el.closest('[data-checkbox-group]');
+    const isSingle = group && group.dataset.single === 'true';
+    if (isSingle) group.querySelectorAll('.pill').forEach(p => p.classList.remove('checked'));
+    el.classList.toggle('checked');
+}
+
+function toggleDetail(targetId, el) {
+    const box = document.getElementById(targetId);
+    if (!box) return;
+    const group = el.closest('[data-checkbox-group]');
+    const checked = group ? [...group.querySelectorAll('.pill.checked')].map(p => p.dataset.value) : [];
+    box.style.display = checked.includes('Yes') ? 'block' : 'none';
+}
+
+// ── Checkbox row builder (for inspection sections) ───────────
+function buildCheckRow(label, field, options, single=true) {
+    return `<div class="form-group">
+        <label class="form-label">${label}</label>
+        <div class="pill-group" data-checkbox-group="${field}" data-single="${single}">
+            ${options.map(o => `<span class="pill" data-value="${o}" onclick="togglePill(this)">${o}</span>`).join('')}
+        </div>
+    </div>`;
+}
+
+const twoOpts = ['Yes', 'No'];
+const condOpts = ['Good', 'Fair', 'Moderate', 'Poor'];
+const autoMan  = ['Auto', 'Manual'];
+const builtMod = ['Built-in', 'Modified'];
+const origRep  = ['Original', 'Repaired'];
+
+document.getElementById('interior-checks').innerHTML = [
+    ['Transmission (Gear)',  'transmission',      autoMan],
+    ['Ignition (Start)',     'ignition',           ['Push', 'Key']],
+    ['Power Window',         'power_window',       autoMan],
+    ['Power Steering',       'power_steering',     autoMan],
+    ['Power Side Mirror',    'power_side_mirror',  autoMan],
+    ['Power Door Locks',     'power_door_locks',   twoOpts],
+    ['Sound System',         'sound_system',       builtMod],
+    ['Wooden Panel',         'wooden_panel',       twoOpts],
+    ['Leather Interior',     'leather_interior',   twoOpts],
+    ['Airbag',               'airbag',             twoOpts],
+    ['Back Camera',          'back_camera',        twoOpts],
+    ['Ambient Lighting',     'ambient_lighting',   builtMod],
+].map(([l,f,o]) => buildCheckRow(l,f,o,true)).join('');
+
+document.getElementById('exterior-checks').innerHTML = [
+    ['Body Condition',    'body_condition',   condOpts],
+    ['Engine Condition',  'engine_condition', condOpts],
+    ['Tires Condition',   'tires_condition',  condOpts],
+    ['Major Defects',     'major_defects',    twoOpts],
+    ['Chassis Repaired',  'chassis_repaired', twoOpts],
+    ['Alloy Rim',         'alloy_rim',        builtMod],
+    ['Sun Roof/Moon Roof','sun_roof',         twoOpts],
+    ['Glass',             'glass',            origRep],
+    ['Fog Light',         'fog_light',        twoOpts],
+    ['Dimension',         'dimension',        ['Long','Hatchback','Saloon','SUV']],
+    ['Paint Condition',   'paint_condition',  condOpts],
+].map(([l,f,o]) => buildCheckRow(l,f,o,true)).join('') +
+`<div class="form-group">
+    <label class="form-label">Major Accidental History</label>
+    <div class="pill-group" data-checkbox-group="accidental_history" data-single="true">
+        <span class="pill" data-value="Yes" onclick="togglePill(this);toggleDetail('accidental-detail',this)">Yes</span>
+        <span class="pill" data-value="No" onclick="togglePill(this);toggleDetail('accidental-detail',this)">No</span>
+    </div>
+</div>
+<div class="form-group" id="accidental-detail" style="display:none;">
+    <label class="form-label">Accidental History Detail</label>
+    <textarea class="form-control" data-field="accidental_history_detail" rows="2" placeholder="Describe accidental history"></textarea>
+</div>`;
+
+document.getElementById('assessment-checks').innerHTML = [
+    ['Interior Condition', 'interior_condition', ['Good','Average','Poor']],
+    ['Exterior Condition', 'exterior_condition', ['Good','Average','Poor']],
+    ['Any Known Defects',  'known_defects',      twoOpts],
+].map(([l,f,o]) => buildCheckRow(l,f,o,true)).join('');
+
+// ── Owner repeater ───────────────────────────────────────────
+let ownerCount = 1;
+function addOwnerRow() {
+    ownerCount++;
+    const div = document.createElement('div');
+    div.className = 'form-row-3 owner-row';
+    div.style.marginBottom = '1rem';
+    div.innerHTML = `
+        <div class="form-group"><label class="form-label">Owner's Name</label><input type="text" class="form-control" data-field="owner_${ownerCount}_name"></div>
+        <div class="form-group"><label class="form-label">Father's Name</label><input type="text" class="form-control" data-field="owner_${ownerCount}_father"></div>
+        <div class="form-group"><label class="form-label">Owner's Address</label><input type="text" class="form-control" data-field="owner_${ownerCount}_address"></div>`;
+    document.getElementById('owner-rows').appendChild(div);
+}
+
+// ── Valuer / recipient auto-fill ─────────────────────────────
+function updateValuer(num, sel) {
+    const desig = sel.options[sel.selectedIndex]?.getAttribute('data-desig') || '';
+    document.getElementById(`desig-${num}`).value = desig;
+    document.querySelector(`[data-field="valuer_${num}_designation"]`).value = desig;
+}
+function updateRecipient(sel) {
+    const addr = sel.options[sel.selectedIndex]?.getAttribute('data-address') || '';
+    if (addr) document.querySelector('[data-field="recipient_address"]').value = addr;
+}
+
+// ── Currency & FSV ───────────────────────────────────────────
+function fmtCurrency(el) {
+    let v = el.value.replace(/[^0-9.]/g, '');
+    if (v) { let p = v.split('.'); p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ','); el.value = p.join('.'); }
+}
+function calcFSV() {
+    const ap = parseFloat(document.querySelector('[data-field="assessed_price"]').value.replace(/,/g, '')) || 0;
+    document.querySelector('[data-field="forced_sale_value"]').value = (ap * 0.8).toLocaleString('en-US', { maximumFractionDigits: 2 });
+}
+
+// ── Photo upload ─────────────────────────────────────────────
+let uploadedPhotos = [], uploadedQR = null;
+
+function handlePhotoUpload(input) {
+    const files = Array.from(input.files);
+    const remaining = 12 - uploadedPhotos.length;
+    if (files.length > remaining) UI.showToast(`Max 12 photos. You can add ${remaining} more.`, 'error');
+    files.slice(0, remaining).forEach(file => {
+        if (file.size > 2*1024*1024) { UI.showToast(`${file.name} is too large (max 2MB)`, 'error'); return; }
+        const reader = new FileReader();
+        reader.onload = e => {
+            uploadedPhotos.push({ name: file.name, caption: file.name.replace(/\.[^/.]+$/, ''), dataUrl: e.target.result });
+            renderPhotoGrid(); setSaveStatus('unsaved');
+        };
+        reader.readAsDataURL(file);
+    });
+    input.value = '';
+}
+
+function renderPhotoGrid() {
+    const grid = document.getElementById('photo-upload-grid');
+    grid.innerHTML = uploadedPhotos.map((p, i) => `
+        <div style="border-radius:var(--radius-sm);border:1px solid var(--gray-200);overflow:hidden;display:flex;flex-direction:column;">
+            <div style="position:relative;aspect-ratio:4/3;">
+                <img src="${p.dataUrl}" style="width:100%;height:100%;object-fit:cover;">
+                <button onclick="removePhoto(${i})" style="position:absolute;top:4px;right:4px;background:rgba(220,38,38,0.9);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;">x</button>
+            </div>
+            <div style="padding:4px 6px;background:#f9f9f9;border-top:1px solid var(--gray-200);">
+                <input type="text" value="${p.caption||''}" placeholder="Photo caption"
+                    onchange="uploadedPhotos[${i}].caption=this.value;setSaveStatus('unsaved');"
+                    style="width:100%;font-size:0.75rem;border:none;background:transparent;outline:none;color:#333;padding:2px 0;">
+            </div>
+        </div>`).join('');
+    const lbl = document.getElementById('photo-upload-label');
+    if (lbl) lbl.style.display = uploadedPhotos.length >= 12 ? 'none' : 'inline-flex';
+}
+function removePhoto(i) { uploadedPhotos.splice(i, 1); renderPhotoGrid(); setSaveStatus('unsaved'); }
+
+function handleQRUpload(input) {
+    const file = input.files[0]; if (!file) return;
+    if (file.size > 1*1024*1024) { UI.showToast('QR too large (max 1MB)', 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = e => {
+        uploadedQR = { name: file.name, dataUrl: e.target.result };
+        document.getElementById('qr-preview-img').src = e.target.result;
+        document.getElementById('qr-filename').textContent = file.name;
+        document.getElementById('qr-preview-container').style.display = 'block';
+        document.getElementById('qr-upload-label').style.display = 'none';
+        setSaveStatus('unsaved');
+    };
+    reader.readAsDataURL(file); input.value = '';
+}
+function removeQR() {
+    uploadedQR = null;
+    document.getElementById('qr-preview-img').src = '';
+    document.getElementById('qr-preview-container').style.display = 'none';
+    document.getElementById('qr-upload-label').style.display = 'inline-flex';
+    setSaveStatus('unsaved');
+}
+
+// ── Collect / populate ───────────────────────────────────────
+function collectFormData() {
+    const data = {};
+    document.querySelectorAll('[data-field]').forEach(el => { data[el.dataset.field] = el.value; });
+    document.querySelectorAll('[data-checkbox-group]').forEach(g => {
+        data[g.dataset.checkboxGroup] = [...g.querySelectorAll('.pill.checked')].map(p => p.dataset.value);
+    });
+    data._photos   = uploadedPhotos;
+    data._qr       = uploadedQR;
+    data._formType = 'vehicle-valuation';
+    return data;
+}
+
+function populateFormData(data) {
+    if (!data) return;
+    document.querySelectorAll('[data-field]').forEach(el => {
+        if (data[el.dataset.field] !== undefined) el.value = data[el.dataset.field];
+    });
+    document.querySelectorAll('[data-checkbox-group]').forEach(g => {
+        const saved = data[g.dataset.checkboxGroup];
+        if (!Array.isArray(saved)) return;
+        g.querySelectorAll('.pill').forEach(p => p.classList.toggle('checked', saved.includes(p.dataset.value)));
+        const tid = g.dataset.toggleTarget;
+        if (tid) { const box = document.getElementById(tid); if (box) box.style.display = saved.includes('Yes') ? 'block' : 'none'; }
+    });
+    if (Array.isArray(data._photos)) {
+        uploadedPhotos = data._photos.map(p => ({ ...p, caption: p.caption ?? p.name.replace(/\.[^/.]+$/, '') }));
+        renderPhotoGrid();
+    }
+    if (data._qr) {
+        uploadedQR = data._qr;
+        document.getElementById('qr-preview-img').src = data._qr.dataUrl;
+        document.getElementById('qr-filename').textContent = data._qr.name;
+        document.getElementById('qr-preview-container').style.display = 'block';
+        document.getElementById('qr-upload-label').style.display = 'none';
+    }
+}
+
+// ── Save indicator ───────────────────────────────────────────
+function setSaveStatus(status) {
+    const dot = document.getElementById('save-dot');
+    const txt = document.getElementById('save-status');
+    dot.className = 'save-dot';
+    if (status === 'saving') { dot.classList.add('saving'); txt.textContent = 'Saving...'; }
+    if (status === 'saved')  { dot.classList.add('saved');  txt.textContent = 'Saved'; }
+    if (status === 'unsaved') txt.textContent = 'Unsaved changes';
+}
+
+// ── Main ─────────────────────────────────────────────────────
+let currentUserId = null, currentSubmissionId = null;
+
+async function init() {
+    const session = await Auth.requireAuth();
+    if (!session) return;
+    currentUserId = session.user.id;
+    const params = new URLSearchParams(window.location.search);
+    const submissionId = params.get('id');
+    if (submissionId) {
+        try {
+            const { data, error } = await db.from('submissions').select('*').eq('id', submissionId).single();
+            if (error) throw error;
+            currentSubmissionId = data.id;
+            populateFormData(data.form_data);
+            const badge = document.getElementById('status-indicator');
+            badge.style.display = 'inline-flex';
+            badge.className = `status-badge status-${data.status}`;
+            badge.textContent = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+            const fd = data.form_data || {};
+            const title = [fd.manufacturer, fd.vehicle_model].filter(Boolean).join(' ');
+            if (title) document.getElementById('form-title').textContent = title;
+            setSaveStatus('saved');
+        } catch(err) { UI.showToast('Failed to load: ' + err.message, 'error'); }
+    }
+    document.addEventListener('input', () => setSaveStatus('unsaved'));
+    document.addEventListener('change', () => setSaveStatus('unsaved'));
+    setInterval(() => { if (document.getElementById('save-status').textContent === 'Unsaved changes') saveDraft(); }, 90000);
+}
+
+async function saveDraft() {
+    setSaveStatus('saving');
+    const formData = collectFormData();
+    formData._savedAt = new Date().toISOString();
+    try {
+        let result;
+        if (currentSubmissionId) {
+            result = await db.from('submissions').update({ form_data: formData, status: 'draft' }).eq('id', currentSubmissionId).select().single();
+        } else {
+            result = await db.from('submissions').insert({ user_id: currentUserId, form_data: formData, status: 'draft' }).select().single();
+        }
+        if (result.error) throw result.error;
+        currentSubmissionId = result.data.id;
+        history.replaceState({}, '', `form.html?id=${currentSubmissionId}`);
+        setSaveStatus('saved');
+        UI.showToast('Draft saved', 'success', 2000);
+    } catch(err) { setSaveStatus('unsaved'); UI.showToast('Save failed: ' + err.message, 'error'); }
+}
+
+async function submitReport() {
+    if (!confirm('Submit this report? You can still view it after submission.')) return;
+    setSaveStatus('saving');
+    const formData = collectFormData();
+    formData._submittedAt = new Date().toISOString();
+    try {
+        let result;
+        if (currentSubmissionId) {
+            result = await db.from('submissions').update({ form_data: formData, status: 'submitted' }).eq('id', currentSubmissionId).select().single();
+        } else {
+            result = await db.from('submissions').insert({ user_id: currentUserId, form_data: formData, status: 'submitted' }).select().single();
+        }
+        if (result.error) throw result.error;
+        currentSubmissionId = result.data.id;
+        history.replaceState({}, '', `form.html?id=${currentSubmissionId}`);
+        const badge = document.getElementById('status-indicator');
+        badge.style.display = 'inline-flex';
+        badge.className = 'status-badge status-submitted';
+        badge.textContent = 'Submitted';
+        setSaveStatus('saved');
+        UI.showToast('Report submitted successfully!', 'success');
+    } catch(err) { setSaveStatus('unsaved'); UI.showToast('Submit failed: ' + err.message, 'error'); }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>

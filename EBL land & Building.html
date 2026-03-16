@@ -1,0 +1,1780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Valuation Report</title>
+    
+    <!-- PDF Generation Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Book Antiqua', Palatino, serif;
+            background-color: #525659;
+            padding: 0;
+            padding-bottom: 20px;
+        }
+        
+        /* Vertical spacing for the cover page */
+        .cover-page {
+            justify-content: flex-start; /* Start from top */
+            height: 297mm;
+        }
+
+        .cover-page .sheet-content {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .cover-title-container {
+            margin-top: 20%; /* Pushes title down to upper-middle */
+            margin-bottom: auto; /* Pushes everything below it to the bottom */
+        }
+
+        .cover-tables-container {
+            margin-bottom: 40px; /* Space before footer */
+        }  
+        
+        /* --- SHEET STRUCTURE --- */
+        .report-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .sheet {
+            width: 210mm;
+            height: 297mm; /* Standard A4 for screen viewing */
+            background-color: white;
+            padding: 15mm;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- PDF GENERATION OVERRIDES --- */
+        .report-wrapper.pdf-mode {
+            gap: 0 !important;
+        }
+
+        .report-wrapper.pdf-mode .sheet {
+            height: 296mm !important; 
+            width: 210mm !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            border: none !important;
+            page-break-after: always !important;
+            page-break-inside: avoid !important;
+        }
+
+        .report-wrapper.pdf-mode .sheet:last-child {
+            page-break-after: auto !important;
+        }
+
+        /* --- HEADER & FOOTER --- */
+        .report-header-img {
+            width: 100%;
+            height: auto;
+            max-height: 100px;
+            object-fit: contain;
+            display: block;
+            margin-bottom: 20px;
+            flex-shrink: 0;
+        }
+
+        .report-footer-img {
+            width: 100%;
+            height: auto;
+            max-height: 80px;
+            object-fit: contain;
+            display: block;
+            margin-top: auto; 
+            padding-top: 10px;
+            flex-shrink: 0;
+        }
+
+        /* --- CONTENT STYLING --- */
+        .sheet-content {
+            flex-grow: 1;
+            overflow: visible;
+        }
+
+        h1.report-title {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            text-decoration: underline;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            color: #000;
+        }
+        
+        h2 {
+            font-size: 16px;
+            text-decoration: underline;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            color: #000;
+        }
+        
+        h3 {
+            font-size: 14px;
+            font-weight: bold;
+            color: #000;
+        }
+        
+        p {
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+        
+        /* Table Styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 5px 0;
+            font-size: 12px;
+        }
+        
+        table, th, td {
+            border: 1px solid #000;
+        }
+        
+        th, td {
+            padding: 2px;
+            text-align: left;
+            vertical-align: middle;
+        }
+        
+        th {
+            font-weight: bold;
+            text-align: center;
+        }
+        /* Special class for centered cells */
+        .td-center {
+            text-align: center !important;
+        }
+        /* Optional: Centers the typing cursor inside the input as well */
+        .td-center input {
+            text-align: center;
+        }
+        .table-scroll {
+            width: 100%;
+            overflow-x: auto; /* Allows scrolling on screen */
+        }
+
+        /* Input Styles */
+        input[type="text"], 
+        input[type="date"], 
+        input[type="time"], 
+        input[type="number"], 
+        textarea, 
+        select {
+            width: 100%;
+            padding: 2px;
+            border: 1px solid #ccc;
+            border-radius: 2px;
+            font-family: 'Book Antiqua', 'Palatino Linotype', 'Palatino', serif;
+            font-size: 12px;
+            background-color: #fff;
+            outline: none;
+        }
+        
+        /* Force font for Date and Time internal fields (Chrome/Edge/Safari) */
+        input[type="date"]::-webkit-datetime-edit,
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-datetime-edit,
+        input[type="time"]::-webkit-datetime-edit-fields-wrapper,
+        input[type="time"]::-webkit-datetime-edit-text,
+        input[type="time"]::-webkit-datetime-edit-minute,
+        input[type="time"]::-webkit-datetime-edit-hour,
+        input[type="time"]::-webkit-datetime-edit-ampm-block {
+            font-family: 'Book Antiqua', 'Palatino Linotype', 'Palatino', serif;
+            font-size: 12px;
+        }
+        input:focus, textarea:focus, select:focus {
+            border-color: #2196F3;
+            outline: none;
+            background-color: #f0f8ff;
+        }
+        
+        textarea {
+            min-height: 40px;
+            resize: vertical;
+        }
+        
+        .header-section table th {
+            width: 30%;
+            text-align: left;
+        }
+        
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 10px 0;
+        }
+        
+        .address-box {
+            border: 1px solid #000;
+            padding: 8px;
+            font-size: 12px;
+        }
+        
+        .formula {
+            font-style: italic;
+            color: #444;
+            font-size: 11px;
+        }
+        
+        .note {
+            margin: 10px 0;
+            font-size: 12px;
+        }
+
+
+        /* --- PHOTO PAGE STYLES --- */
+        .photo-page-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-evenly; 
+            height: 100%;
+            padding: 10px 0;
+        }
+
+        .photo-slot {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .photo-frame {
+            width: 100%;
+            height: 90mm; /* Fixed height */
+            border: 2px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            overflow: hidden;
+            margin-bottom: 5px;
+            position: relative; /* Context for absolute button */
+        }
+
+        .photo-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .add-photo-placeholder {
+            width: 100%;
+            height: 90mm;
+            border: 3px dashed #ccc;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #888;
+            background-color: #fcfcfc;
+            transition: 0.3s;
+            margin-bottom: 25px; 
+        }
+
+        .add-photo-placeholder:hover {
+            border-color: #3498db;
+            color: #3498db;
+            background-color: #f0f8ff;
+        }
+
+        .add-photo-placeholder i {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+        
+        /* DELETE BUTTON STYLES  */
+        .delete-photo-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: #ff4444;
+            color: white;
+            border: 2px solid white; /* Adding border for visibility on dark images */
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 100; /* Ensure it's on top */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+            outline: none;
+        }
+
+        .delete-photo-btn:hover {
+            transform: scale(1.1);
+            background-color: #cc0000;
+        }
+
+        .photo-title {
+            width: 100%;
+            text-align: center !important;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 14px !important;
+            border: none !important;
+            border-bottom: 1px solid transparent !important;
+            padding: 5px !important;
+            background: transparent !important;
+            outline: none;
+        }
+        
+        .photo-title:focus {
+            border-bottom: 1px dashed #ccc !important;
+        }
+        
+        .annexure-header {
+            width: 100%;
+            text-align: left;
+            font-style: italic;
+            text-decoration: underline;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        /* Hide "Add Photo" placeholder in print/PDF mode */
+        .report-wrapper.pdf-mode .add-photo-placeholder {
+            display: none !important;
+        }
+        
+        /* Hide delete buttons in PDF mode */
+        .report-wrapper.pdf-mode .delete-photo-btn {
+            display: none !important;
+        }
+
+        /* --- PREVIEW MODE --- */
+        body.preview-mode input, 
+        body.preview-mode textarea, 
+        body.preview-mode select {
+            border: none;
+            background: transparent;
+            padding: 0;
+            resize: none;
+            appearance: none;
+            -webkit-appearance: none;
+            font-weight: bold;
+            color: #000;
+        }
+        
+        body.preview-mode ::placeholder {
+            color: transparent;
+        }
+
+        /* --- CONTROL BAR --- */
+        .control-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #2c3e50;
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+        }
+        
+        .btn-preview { background-color: #3498db; }
+        .btn-download { background-color: #27ae60; }
+        .btn-clear { background-color: #e74c3c; }
+        .btn-edit { background-color: #f39c12; display: none; }
+        .btn-add { background-color: #27ae60; }
+        .btn-remove { background-color: #e74c3c; }
+
+        /* --- PRINT STYLES --- */
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+            }
+            .control-bar { display: none; }
+            .add-photo-placeholder { display: none; }
+            .delete-photo-btn { display: none; }
+        }
+                .auto-grow {
+            display: inline; /* Changed from inline-block to allow wrapping */
+            border: none;
+            outline: none;
+            font: inherit;
+            padding: 0 3px;
+            min-width: 2px;
+            background: transparent;
+            white-space: pre-wrap; /* Essential: keeps spaces and allows wrapping */
+            word-wrap: break-word;
+        }
+        
+        /* Optional: This adds the placeholder back since spans don't have one naturally */
+        .auto-grow:focus {
+            border-bottom: 1px solid #000; /* Line only appears when typing */
+        }
+        ol { font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <!-- Hidden Input for File Upload -->
+    <input type="file" id="image-uploader" multiple accept="image/png, image/jpeg, image/jpg" style="display: none;">
+
+    <!-- WRAPPER FOR ALL SHEETS -->
+    <div class="report-wrapper" id="report-content">
+
+        <!-- ================= SHEET 1 ================= -->
+        <div class="sheet">
+            <img src="AMK Header.png" class="report-header-img" alt="Header" crossorigin="anonymous">
+            
+            <div class="sheet-content">
+                <h1 class="report-title">INSPECTION SURVEY & VALUATION REPORT</h1>
+                
+                <div class="header-section">
+                    <table>
+                        <tr>
+                            <th>Reference Account Name</th>
+                            <td style="width: 10px">:</td>
+                            <td><input id="ref ac1" type="text" placeholder="Enter reference account name" oninput="sync(this, 'ref ac2')"></td>
+                        </tr>
+                        <tr>
+                            <th>Reference No.</th>
+                            <td>:</td>
+                            <td><input type="text" id="val-ref1" placeholder="Enter reference number" oninput="sync(this, 'val-ref2')"></td>
+                        </tr>
+                        
+                        
+                    </table>
+                </div>
+                <!---- AUTO FILL SURVEYOR DETAILS -------->
+                <script>
+                    function autoFillSurveyorDetails() {
+                        const dropdown = document.getElementById('surveyor-select');
+    
+                        // Target fields
+                        const desigField = document.getElementById('sur-designation');
+                        const nidField = document.getElementById('sur-nid');
+                        const contactField = document.getElementById('sur-contact');
+
+                        // Get the selected option
+                        const selectedOption = dropdown.options[dropdown.selectedIndex];
+
+                        // Extract data from attributes
+                        const designation = selectedOption.getAttribute('data-designation');
+                        const nid = selectedOption.getAttribute('data-nid');
+                        const contact = selectedOption.getAttribute('data-contact');
+
+                        // Fill the fields
+                        desigField.value = designation || "";
+                        nidField.value = nid || "";
+                        contactField.value = contact || "";
+                    }
+                </script>
+                
+                <div class="two-column">
+                    <div class="address-box">
+                        <h3>Submitted by:</h3>
+                        <p><strong>AMK Associates Limited</strong></p>
+                        <p>68, Khilgaon Chowdhurypara (4th floor)</p>
+                        <p>DIT Road, Rampura, Dhaka-1219</p>
+                        <p>E-mail: amkassociatesbd@gmail.com</p>
+                        <p>Website: www.amkassociatesltd.com</p>
+                        <p>Contact: +88 01841-132714</p>
+                    </div>
+                    
+                    <div class="address-box">
+                        <h3>Submitted to:</h3>
+                        <input type="text" id="input-recipient-name" placeholder="Recipient Name" oninput="syncRecipientData()" style="font-weight: bold; margin-bottom: 5px; width: 100%;">
+                        <textarea id="input-recipient-address" placeholder="Designation&#10;Bank Name&#10;Address Line 1&#10;Address Line 2&#10;Contact Info" oninput="syncRecipientData()" style="height: 120px; width: 100%;"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <img src="AKM Footer.png" class="report-footer-img" alt="Footer" crossorigin="anonymous">
+        </div>
+
+        <!-- ================= SHEET 2 ================= -->
+        <div class="sheet">
+            <img src="AMK Header.png" class="report-header-img" alt="Header" crossorigin="anonymous">
+            
+            <div class="sheet-content">
+                <div style="margin: 20px 0;">
+                    <p>Ref.: <input type="text" style="width: 150px; display: inline-block;" placeholder="e.g., AMK/EBPLC/2025/..."></p>
+                    <p>Date: <input type="date" style="width: 150px; display: inline-block;"></p>
+                </div>
+                
+                <div style="margin: 10px 0;">
+                    <p><strong id="output-recipient-name"></strong></p>
+                    <p id="output-recipient-address" style="white-space: pre-wrap; margin-top: 0; line-height: 1.4;"></p>
+                </div>
+                
+                <div style="margin: 10px 0;">
+                    <p><strong>Subject: Inspection, Survey & Valuation Report on Land with Building</strong></p>
+                    <p><strong>Ref. A/C Name: <input id="ref ac2" type="text" placeholder="Enter reference account name" oninput="sync(this, 'ref ac1')"  style="width: auto; display: inline; font-weight: bold; font-family: inherit;"></strong></p>
+                </div>
+                
+                <p>Dear Sir,</p>
+                <p>Greetings from AMK Associates Limited and Thank You very much for referring us!</p>
+                <p style="text-align: justify;">Pursuant to your communication through <span class="auto-grow" contenteditable="true" role="textbox" data-placeholder="Enter medium"></span>, dated: <span class="auto-grow" contenteditable="true" role="textbox" data-placeholder="Date"></span> by <span class="auto-grow" contenteditable="true" role="textbox" data-placeholder="Enter name"></span>, we, AMK Associates Limited ("AMK") has conducted the inspection, survey and valuation. Summary of the valuation is as below:</p>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Description</th>
+                            <th>Total Land Area (Decimal)</th>
+                            <th>Present Rate per Decimal (BDT)</th>
+                            <th>Land Value (BDT)</th>
+                            <th>Building Value (BDT)</th>
+                            <th>Total Value (BDT)</th>
+                        </tr>
+                        <tr>
+                            <th></th>
+                            <th class="formula">a</th>
+                            <th class="formula">b</th>
+                            <th class="formula">c=a*b</th>
+                            <th class="formula">d</th>
+                            <th class="formula">e=c+d</th>
+                        </tr>
+                    </thead>
+                    <tbody id="valuation-table">
+                        <tr>
+                            <td>Present Market Value</td>
+                            <td><input type="number" step="any" class="calc-land-area" oninput="calculateValuation()" placeholder="0.00" style="text-align: center; "></td>
+                            <td><input type="text" class="calc-rate" oninput="formatAndCalculate(this)" placeholder="0" style="text-align: center; "></td>
+                            <td><input type="text" class="calc-land-val" readonly style="background: #f9f9f9; text-align: center; "></td>
+                            <td><input type="text" class="calc-build-val" oninput="formatAndCalculate(this)" placeholder="0" style="text-align: center; "></td>
+                            <td><input type="text" class="calc-total" readonly style="background: #f9f9f9; font-weight: bold; text-align: center; "></td>
+                        </tr>
+                        <tr style="background-color: #f2f2f2;">
+                            <td>Forced Sale Value (20% less)</td>
+                            <td><input type="number" class="calc-land-area" style="text-align: center; " readonly></td>
+                            <td><input type="text" class="calc-rate" style="text-align: center; " readonly></td>
+                            <td><input type="text" class="calc-land-val" style="text-align: center; " readonly></td>
+                            <td><input type="text" class="calc-build-val" style="text-align: center; " readonly></td>
+                            <td><input type="text" class="calc-total" readonly style="font-weight: bold; text-align: center;"></td>
+                        </tr>
+                        <tr>
+                            <td>Mouza Value</td>
+                            <td><input type="number" step="any" class="calc-land-area" oninput="calculateValuation()" placeholder="0.00" style="text-align: center; "></td>
+                            <td><input type="text" class="calc-rate" oninput="formatAndCalculate(this)" placeholder="0" style="text-align: center; "></td>
+                            <td><input type="text" class="calc-land-val" readonly style="background: #f9f9f9; text-align: center;"></td>
+                            <td><input type="text" class="calc-build-val" oninput="formatAndCalculate(this)" placeholder="0" style="text-align: center; "></td>
+                            <td><input type="text" class="calc-total" readonly style="background: #f9f9f9; font-weight: bold; text-align: center;"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <script>
+                    // Helper to remove commas and return a number
+                    function getRawValue(input) {
+
+                        if (!input) return 0;
+
+                        return parseFloat(input.value.replace(/,/g, '')) || 0;
+                    }
+
+                    // Helper to format integers with commas
+                    function formatNumber(num) {
+
+                        return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+                    }
+
+                    // Function to format currency as user types
+                    function formatAndCalculate(input) {
+
+                        let value = input.value.replace(/[^0-9]/g, ''); // Remove non-numeric
+
+                        if (value) {
+
+                            input.value = parseInt(value).toLocaleString();
+
+                        }
+
+                        calculateValuation();
+                    }
+
+                    function calculateValuation() {
+
+                        const rows = document.querySelectorAll("#valuation-table tr");
+    
+
+                        // --- STEP 1: Process Present Market Value (Row 0) ---
+                        const r1_area = parseFloat(rows[0].querySelector(".calc-land-area").value) || 0;
+                        const r1_rate = getRawValue(rows[0].querySelector(".calc-rate"));
+                        const r1_build = getRawValue(rows[0].querySelector(".calc-build-val"));
+
+                        const r1_landVal = r1_area * r1_rate;
+                        const r1_total = r1_landVal + r1_build;
+
+                        rows[0].querySelector(".calc-land-val").value = formatNumber(r1_landVal);
+                        rows[0].querySelector(".calc-total").value = formatNumber(r1_total);
+
+                        // --- STEP 2: Process Forced Sale Value (Row 1) - 80% of Row 0 ---
+                        const r2_area = r1_area; // Same area
+                        const r2_rate = r1_rate * 0.8;
+                        const r2_landVal = r1_landVal * 0.8;
+                        const r2_build = r1_build * 0.8;
+                        const r2_total = r1_total * 0.8;
+
+                        rows[1].querySelector(".calc-land-area").value = r2_area || "";
+                        rows[1].querySelector(".calc-rate").value = formatNumber(r2_rate);
+                        rows[1].querySelector(".calc-land-val").value = formatNumber(r2_landVal);
+                        rows[1].querySelector(".calc-build-val").value = formatNumber(r2_build);
+                        rows[1].querySelector(".calc-total").value = formatNumber(r2_total);
+
+                        // --- STEP 3: Process Mouza Value (Row 2) - Independent ---
+                        const r3_area = parseFloat(rows[2].querySelector(".calc-land-area").value) || 0;
+                        const r3_rate = getRawValue(rows[2].querySelector(".calc-rate"));
+                        const r3_build = getRawValue(rows[2].querySelector(".calc-build-val"));
+
+                        const r3_landVal = r3_area * r3_rate;
+                        const r3_total = r3_landVal + r3_build;
+
+                        rows[2].querySelector(".calc-land-val").value = formatNumber(r3_landVal);
+                        rows[2].querySelector(".calc-total").value = formatNumber(r3_total);
+                        
+                        // --- STEP 4: SYNC TO SUMMARY ROWS ---
+    
+                        // 1. Get the formatted strings from the main table cells
+                        const marketTotalVal = rows[0].querySelector(".calc-total").value;
+                        const forcedTotalVal = rows[1].querySelector(".calc-total").value;
+
+                        // 2. Push those values to the summary input IDs
+                        const marketDisplay = document.getElementById('final-market-value');
+                        const forcedDisplay = document.getElementById('final-forced-value');
+
+                        if (marketDisplay) {
+                            marketDisplay.value = marketTotalVal;
+                        }
+    
+                        if (forcedDisplay) {
+                            forcedDisplay.value = forcedTotalVal;
+                        }
+                    }
+                </script>
+                <p>The report has been prepared based on our physical inspection, verification, necessary documents as provided by concern office/individual, local market analysis and assessment to the best of our knowledge.</p>
+                <p>Detail Report and necessary attachments are enclosed herewith for your record and perusal.</p>
+                <p>For any query, please feel free to contact us.</p>
+                <p>With best regards,</p>
+                
+                <div style="margin: 50px 20px 0;">
+                    <table style="border: none; width: 100%;">
+                        <tr>
+                            <td style="border: none; width: 45%;">
+                                <div style="border-top: 1px solid #000; width: 90%; padding-top: 5px;">
+                                    <p style="font-weight: bold;">
+                                        <select id="select-valuer-1" onchange="updateSignatureDetails(1)" style="font-family: inherit; font-size: inherit; font-weight: bold; border: none; width: 100%; background: transparent; outline: none; appearance: none;">
+                                            <option value="" disabled selected>Select Valuer 1</option>
+                                            <option value="Engr. Abdullah Al Rafi" data-designation="Executive,ISV">Engr. Abdullah Al Rafi</option>
+                                            <option value="Md Towhid Islam" data-designation="Senior Officer,ISV">Md Towhid Islam</option>
+                                            <option value="Alif Ahmed" data-designation="Assistant Executive,ISV">Alif Ahmed</option>
+                                            <option value="MD Junaid Hasan" data-designation="Officer,ISV">MD Junaid Hasan</option>
+                                            <option value="Utsha Kar Ork" data-designation="Sr. Officer,ISV">Utsha Kar Ork</option>
+                                            <option value="Sazzadur Rahman" data-designation="Senior Officer,ISV">Sazzadur Rahman</option>
+                                            <option value="Shahriar Alam" data-designation="Officer,ISV">Shahriar Alam</option>
+                                            <option value="Md Mesbah Uddin" data-designation="Manager,ISV">Md Mesbah Uddin</option>
+                                            <option value="Md. Sahed Alam" data-designation="Sr. Officer,ISV">Md. Sahed Alam</option>
+                                        </select>
+                                    </p>
+                                    <p>
+                                        <input type="text" id="desig-output-1" placeholder="Designation" 
+                                            style="border: none; width: 100%; font-family: inherit;" readonly>
+                                    </p>
+                                </div>
+                            </td>
+
+                            <td style="border: none; width: 10%;"></td>
+
+                            <td style="border: none; width: 45%;">
+                                <div style="border-top: 1px solid #000; width: 90%; padding-top: 5px;">
+                                    <p style="font-weight: bold;">
+                                        <select id="select-valuer-2" onchange="updateSignatureDetails(2)" 
+                                            style="font-family: inherit; font-size: inherit; font-weight: bold; border: none; width: 100%; background: transparent; outline: none; appearance: none;">
+                                            <option value="" disabled selected>Select Valuer 2</option>
+                                            <option value="Engr. Abdullah Al Rafi" data-designation="Executive,ISV">Engr. Abdullah Al Rafi</option>
+                                            <option value="Md Towhid Islam" data-designation="Senior Officer,ISV">Md Towhid Islam</option>
+                                            <option value="Alif Ahmed" data-designation="Assistant Executive,ISV">Alif Ahmed</option>
+                                            <option value="MD Junaid Hasan" data-designation="Officer,ISV">MD Junaid Hasan</option>
+                                            <option value="Utsha Kar Ork" data-designation="Sr. Officer,ISV">Utsha Kar Ork</option>
+                                            <option value="Sazzadur Rahman" data-designation="Senior Officer,ISV">Sazzadur Rahman</option>
+                                            <option value="Shahriar Alam" data-designation="Officer,ISV">Shahriar Alam</option>
+                                            <option value="Md Mesbah Uddin" data-designation="Manager,ISV">Md Mesbah Uddin</option>
+                                            <option value="Md. Sahed Alam" data-designation="Sr. Officer,ISV">Md. Sahed Alam</option>
+                                        </select>
+                                    </p>
+                                    <p>
+                                        <input type="text" id="desig-output-2" placeholder="Designation" 
+                                            style="border: none; width: 100%; font-family: inherit;" readonly>
+                                    </p>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <script>
+                    function updateSignatureDetails(num) {
+                        const dropdown = document.getElementById('select-valuer-' + num);
+                        const desigOutput = document.getElementById('desig-output-' + num);
+
+                        if (!dropdown || !desigOutput) return;
+
+                        const selectedOption = dropdown.options[dropdown.selectedIndex];
+                        const designationValue = selectedOption.getAttribute('data-designation');
+
+                        if (designationValue) {
+                            // Fill the designation field for the specific valuer (1 or 2)
+                            desigOutput.value = designationValue;
+
+                            // Ensure the width adjusts if you have the auto-grow script
+                            if (typeof adjustWidth === "function") {
+                                adjustWidth.call(desigOutput);
+                            }
+                        }
+                    }
+                </script>
+                <div class="two-column">
+                    <div class="note">
+                        <p><strong>Encl:</strong></p>
+                        <ol style="padding-left: 20px;">
+                            <li>Annexure-I: Photograph of Property</li>
+                            <li>Annexure-II: Hand Sketch Map</li>
+                            <li>Annexure-III: Mouza Map</li>
+                            <li>Annexure-IV: Location on Google Map</li>
+                        </ol>
+                    </div>
+                    <div class="note">
+                        <br>
+                        <br>
+                        <ol start="5">
+                            <li>Annexure-V: QR Code for video</li>
+                            <li>Annexure-VI: QR Code for Map</li>
+                            <li>Annexure-VII: SRO Mouza Value</li>
+                            <li>Annexure-VIII: Status In Area Master Plan</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <img src="AKM Footer.png" class="report-footer-img" alt="Footer" crossorigin="anonymous">
+        </div>
+
+        <!-- ================= SHEET 3 ================= -->
+        <div class="sheet">
+            <img src="AMK Header.png" class="report-header-img" alt="Header" crossorigin="anonymous">
+            
+            <div class="sheet-content">
+                <h2 align="center">Summary of the Valuation Report</h2>
+                
+                <table>
+                    <tr>
+                        <th style="width: 30%;">File receiving date</th>
+                        <td style="width: 10px;">:</td>
+                        <td><input type="date"></td>
+                    </tr>
+                    <tr>
+                        <th>Valuation Ref No.</th>
+                        <td>:</td>
+                        <td><input type="text" id="val-ref2" placeholder="Enter valuation ref no" oninput="sync(this, 'val-ref1')"></td>
+                    </tr>
+                    <tr>
+                        <th>Valuation date</th>
+                        <td>:</td>
+                        <td><input type="date"></td>
+                    </tr>
+                    <tr>
+                        <th>Property location</th>
+                        <td>:</td>
+                        <td><input type="text" placeholder="Enter property location"></td>
+                    </tr>
+                    <tr>
+                        <th>Valuation conducted by</th>
+                        <td>:</td>
+                        <td><textarea placeholder="Enter details">AMK Associates Limited</textarea></td>
+                    </tr>
+                </table>
+                <table>
+                    <tr>
+                        <th style="width: 30%;">Surveyor Name</th>
+                        <td style="width: 10px;">:</td>
+                        <td><input type="text" id="target-name" placeholder="Enter surveyor name"></td>
+                    </tr>
+                    <tr>
+                        <th>Designation</th>
+                        <td>:</td>
+                        <td><input type="text" id="target-designation" placeholder="Enter designation"></td>
+                    </tr>
+                    <tr>
+                        <th>NID Number</th>
+                        <td>:</td>
+                        <td><input type="text" id="target-nid" placeholder="Enter NID number"></td>
+                    </tr>
+                    <tr>
+                        <th>Contact Number</th>
+                        <td>:</td>
+                        <td><input type="text" id="target-contact" placeholder="Enter contact number"></td>
+                    </tr>
+                </table>
+                
+                <table>
+                    <tr>
+                        <th style="width: 30%;">Type of property</th>
+                        <td style="width: 10px;">:</td>
+                        <td>
+                            <select>
+                                <option value="">Select type</option>
+                                <option value="Freehold">Freehold</option>
+                                <option value="Leasehold">Leasehold</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Type of Property seller</th>
+                        <td>:</td>
+                        <td><input type="text" placeholder="Enter seller type"></td>
+                    </tr>
+                    <tr>
+                        <th>Current Market Value</th>
+                        <td>:</td>
+                        <td>BDT <input type="text" id="final-market-value" style="width: 80%; font-weight: bold;" readonly></td>
+                    </tr>
+                    <tr>
+                        <th>Forced Sale Value</th>
+                        <td>:</td>
+                        <td>BDT <input type="text" id="final-forced-value" style="width: 80%; font-weight: bold;" readonly></td>
+                    </tr>
+                    <tr>
+                        <th>Deviation (Plinth)</th>
+                        <td>:</td>
+                        <td><span class="auto-grow" contenteditable="true" role="textbox" data-placeholder="Enter medium"></span>%</td>
+                    </tr>
+                    <tr>
+                        <th>Deviation (Floor)</th>
+                        <td>:</td>
+                        <td><input type="text" placeholder="Enter range (e.g., 1 to 5)"></td>
+                    </tr>
+                </table>
+            </div>
+
+            <img src="AKM Footer.png" class="report-footer-img" alt="Footer" crossorigin="anonymous">
+        </div>
+
+        <!-- ================= SHEET 4 (Sections A & B) ================= -->
+        <div class="sheet">
+            <img src="AMK Header.png" class="report-header-img" alt="Header" crossorigin="anonymous">
+            
+            <div class="sheet-content">
+                <h2>A. Particulars of Account:</h2>
+                <table>
+                    <tr><th style="width: 30%;">A/C Name</th><td style="width: 10px;">:</td><td><input type="text"></td></tr>
+                    <tr><th>Office/Business Address</th><td>:</td><td><textarea></textarea></td></tr>
+                    <tr><th>Factory Address</th><td>:</td><td><textarea></textarea></td></tr>
+                    <tr><th>Nature of Business</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Age of Business</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Organization Type</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Contact Person Name</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Mobile Number of Contact Person</th><td>:</td><td><input type="text"></td></tr>
+                </table>
+
+                <h2>B. Particulars of Property Owner:</h2>
+                <table>
+                    <tr><th style="width: 30%;">Property Owner(s) Name</th><td style="width: 10px;">:</td><td><input type="text"></td></tr>
+                    <tr><th>Father's Name</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Mother's Name</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Present Address</th><td>:</td><td><textarea></textarea></td></tr>
+                    <tr><th>Permanent Address</th><td>:</td><td><textarea></textarea></td></tr>
+                    <tr><th>Contact Number</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>NID Number</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Relationship with Borrower</th><td>:</td><td><input type="text"></td></tr>
+                </table>
+            </div>
+
+            <img src="AKM Footer.png" class="report-footer-img" alt="Footer" crossorigin="anonymous">
+        </div>
+
+        <!-- ================= SHEET 5 (Sections C & D) ================= -->
+        <div class="sheet">
+            <img src="AMK Header.png" class="report-header-img" alt="Header" crossorigin="anonymous">
+            
+            <div class="sheet-content">
+                <h2>C. Schedule of Property:</h2>
+                <table>
+                    <tr><th style="width: 30%;">District</th><td style="width: 10px;">:</td><td><input type="text"></td></tr>
+                    <tr><th>Thana / Upazila</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Mouza</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>JL No.</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Local Authority</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Land Office</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Sub-Register Office</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Khatian No.</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Corresponding Dag No.</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Deed Number & Date</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Mutation Khatian No.</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Jote No.</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>DCR No.</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>GRR No.</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Land Type (LDTR)</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Property Address</th><td>:</td><td><textarea></textarea></td></tr>
+                    <tr><th>Last Ownership Transfer</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Total Area as per Deed</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Total Area Physically found</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Way to visit Property</th><td>:</td><td><textarea></textarea></td></tr>
+                </table>
+
+                <h2>D. Property Identification:</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Direction</th>
+                            <th>Chowhoddi as Per Deed</th>
+                            <th>Present Chowhoddi</th>
+                            <th>Demarcation</th>
+                            <th>Access Road</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><th>North</th><td><textarea></textarea></td><td><textarea></textarea></td><td><textarea></textarea></td><td><textarea></textarea></td></tr>
+                        <tr><th>South</th><td><textarea></textarea></td><td><textarea></textarea></td><td><textarea></textarea></td><td><textarea></textarea></td></tr>
+                        <tr><th>East</th><td><textarea></textarea></td><td><textarea></textarea></td><td><textarea></textarea></td><td><textarea></textarea></td></tr>
+                        <tr><th>West</th><td><textarea></textarea></td><td><textarea></textarea></td><td><textarea></textarea></td><td><textarea></textarea></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <img src="AKM Footer.png" class="report-footer-img" alt="Footer" crossorigin="anonymous">
+        </div>
+
+        <!-- ================= SHEET 6 (Section E) ================= -->
+        <div class="sheet">
+            <img src="AMK Header.png" class="report-header-img" alt="Header" crossorigin="anonymous">
+            
+            <div class="sheet-content">
+                <h2>E. Other Features of Property:</h2>
+                <table>
+                    <tr><th style="width: 40%;">Electricity</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>GAS</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Water Supply</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Sewerage System</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Internet</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Satellite / Google Location</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Status of access Road for Transports</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Nature of Land</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Type of Land</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Plot Location</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Description of Property</th><td>:</td><td><textarea></textarea></td></tr>
+                    <tr><th>Usage Restriction</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Possibility of Frequent Flood</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Classification of Land</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Status in Master Plan</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Current Possession</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Public Establishments nearby the Property</th><td>:</td><td><textarea></textarea></td></tr>
+                    <tr><th>Distance from nearby Prominent location</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Distance from nearby Main Road</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Distance from nearby Branch / Office</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Annual Income from the Property</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Present Use of theProperty</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Future Prospect</th><td>:</td><td><textarea></textarea></td></tr>
+                </table>
+            </div>
+
+            <img src="AKM Footer.png" class="report-footer-img" alt="Footer" crossorigin="anonymous">
+        </div>
+
+        <!-- ================= SHEET 7 (Section F) ================= -->
+        <div class="sheet">
+            <img src="AMK Header.png" class="report-header-img" alt="Header" crossorigin="anonymous">
+            
+            <div class="sheet-content">
+                <h2>F. Civil Construction of Property:</h2>
+                <table>
+                    <tr><th style="width: 40%;">Structure Type</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Foundation Type</th><td>:</td><td><input type="text"></td></tr>
+                    <tr>
+                        <th>Number of Stories</th><td>:</td>
+                        <td>
+                            (a) As per Plan: <span class="auto-grow" contenteditable="true" role="textbox"></span> Storied<br>
+                            (b) As per Physical: <span class="auto-grow" contenteditable="true" role="textbox"></span> Storied
+                        </td>
+                    </tr>
+                    <tr><th>Approval Authority</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Plan No. & Date</th><td>:</td><td>Sarok number: <span class="auto-grow" contenteditable="true" role="textbox"></span>, Date: <input type="date" style="width: 30%; display: inline-block;"></td></tr>
+                    <tr><th>Occupancy Category</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Age of Structure</th><td>:</td><td><span class="auto-grow" contenteditable="true" role="textbox"></span> Years (Construction period:<span class="auto-grow" contenteditable="true" role="textbox"></span> to <span class="auto-grow" contenteditable="true" role="textbox"></span>)</td></tr>
+                    <tr><th>Shape of Building</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Project Name</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Developer's Name</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Owner’s Name in Building Plan</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Security Guards</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Commercial</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Garden Area/Play Zone</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Generator Facilities</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Lift Facilities</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Close Circuit Camera (CCTV)</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Fire Fighting & Emergency</th><td>:</td><td><input type="text"></td></tr>
+                    <tr><th>Front Face of Structure</th><td>:</td><td><input type="text"></td></tr>
+                </table>
+            </div>
+
+            <img src="AKM Footer.png" class="report-footer-img" alt="Footer" crossorigin="anonymous">
+        </div>
+
+        <!-- ================= SHEET 8 (Floors + G + H) ================= -->
+        <div class="sheet">
+            <img src="AMK Header.png" class="report-header-img" alt="Header" crossorigin="anonymous">
+            <div class="sheet-content">
+                <div class="table-scroll">
+                    <table id="table1">
+                        <tr>
+                            <th>Floor</th>
+                            <th>Area as per Plan (Sft.)</th>
+                            <th>Area as per Physical (Sft.)</th>
+                            <th>Deviation (Sft.)</th>
+                            <th>Deviation (%)</th>
+                        </tr>
+                        <tr>
+                            <th>Ground Floor</th>
+                            <td class="td-center"><input type="text"></td>
+                            <td class="td-center"><input type="text"></td>
+                            <td class="td-center"><input type="text"></td>
+                            <td class="td-center"><input type="text"></td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div class="table-scroll">
+                    <table id="table2">
+                        <thead>
+                            <tr>
+                                <th style="width: 10%;">Floor</th>
+                                <th>Unit per Floor (Plan)</th>
+                                <th>Unit per Floor (Physical)</th>
+                                <th>Number of Room</th>
+                                <th>Number of Bathroom</th>
+                                <th>No of Balcony</th>
+                                <th>No of Drawing Room</th>
+                                <th>No of Dining Room</th>
+                                <th>Drawing Cum Dining</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th>Ground Floor</th>
+                                <td class="td-center"><input type="text"></td>
+                                <td class="td-center"><input type="text"></td>
+                                <td class="td-center"><input type="text"></td>
+                                <td class="td-center"><input type="text"></td>
+                                <td class="td-center"><input type="text"></td>
+                                <td class="td-center"><input type="text"></td>
+                                <td class="td-center"><input type="text"></td>
+                                <td class="td-center"><input type="text"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <h2>G. Setback Comparison:</h2>
+                <table>
+                    <thead>
+                    <tr><th rowspan="2">Direction</th><th>As Per Approved <br>Plan (Ft.)</th><th>As Per Physical <br>Physical (Ft.)</th><th>Deviation (Ft.)</th></tr>
+                    <tr>
+                        <th>a</th>
+                        <th>b</th>
+                        <th>c=b-a</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><th>North</th><td class="td-center"><input type="text"></td><td class="td-center"><input type="text"></td><td class="td-center"><input type="text"></td></tr>
+                    <tr><th>South</th><td class="td-center"><input type="text"></td><td class="td-center"><input type="text"></td><td class="td-center"><input type="text"></td></tr>
+                    <tr><th>East</th><td class="td-center"><input type="text"></td><td class="td-center"><input type="text"></td><td class="td-center"><input type="text"></td></tr>
+                    <tr><th>West</th><td class="td-center"><input type="text"></td><td class="td-center"><input type="text"></td><td class="td-center"><input type="text"></td></tr>
+                    <tr><th>Road (N/S)</th><td class="td-center"><input type="text"></td><td class="td-center"><input type="text"></td><td class="td-center"><input type="text"></td></tr>
+                    <tr><th>Road (E/W)</th><td class="td-center"><input type="text"></td><td class="td-center"><input type="text"></td><td class="td-center"><input type="text"></td></tr>
+                </tbody>
+                </table>
+                </div>
+            </div>
+
+            <img src="AKM Footer.png" class="report-footer-img" alt="Footer" crossorigin="anonymous">
+        </div>
+
+        <!-- ================= SHEET 9 (Price & Dec) ================= -->
+        <div class="sheet">
+            <img src="AMK Header.png" class="report-header-img" alt="Header" crossorigin="anonymous">
+            
+            <div class="sheet-content">
+                
+                <h2>H. Construction Percentage:</h2>
+                <div class="table-scroll">
+                    <table id="workCompletionTable">
+                        <thead>
+                            <tr>
+                                <th>Floor</th><th>Structure</th><th>Brick</th><th>Wood</th><th>Metal</th>
+                                <th>Plumbing <br>& sanitary</th><th>Electrical</th><th>Plaster</th>
+                                <th>General <br> Floor</th><th>Aluminium</th><th>Paint</th><th>Work<br>Completion %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><th>Ground</th><td class="td-center"><input type="text"></td><td class="td-center"><input type="text"></td><td class="td-center"><input type="text"></td><td class="td-center"><input type="text"></td><td class="td-center"><input type="text"></td><td class="td-center"><input type="text"></td><td class="td-center"><input type="text"></td><td class="td-center"><input type="text"></td><td class="td-center"><input type="text"></td><td class="td-center"><input type="text"></td><td class="td-center"><input type="text"></td></tr>
+                        </tbody>
+                    </table>
+                    <h2>I. Floor-wise Building Value:</h2>
+
+                <table id="costCalculationTable">
+                    <thead>
+                        <tr>
+                            <th rowspan="3">Floor</th>
+                            <th colspan="2">Area (Sft.)</th>
+                            <th rowspan="2">Present Construction Cost per Sft. (BDT) </th>
+                            <th colspan="2">Estimated Value (BDT) for 100% completion</th>
+                            <th rowspan="2">Work Completion (%) till date </th>
+                            <th colspan="2">Present Value (BDT)</th>
+                        </tr>
+                        <tr>
+                            <th>As per Plan </th>
+                            <th>As per Physical Inspection</th>
+                            <th>As per Plan</th>
+                            <th>As per Physical Inspection</th>
+                            <th>As per Plan</th>
+                            <th>As per Physical Inspection</th>
+                        </tr>
+                        <tr>
+                            <th>a</th><th>b</th><th>c</th><th>d=a*c</th><th>e=b*c</th><th>f</th><th>g=d*f</th><th>h=e*f</th>
+                        </tr>
+                    </thead>
+                    <tbody id="costBody">
+                        <tr>
+                            <td>Foundation</td>
+                            <td class="td-center"><input type="text"></td>
+                            <td class="td-center"><input type="text"></td>
+                            <td class="td-center"><input type="text"></td>
+                            <td class="td-center"><input type="text"></td>
+                            <td class="td-center"><input type="text"></td>
+                            <td class="td-center"><input type="text"></td>
+                            <td class="td-center"><input type="text"></td>
+                            <td class="td-center"><input type="text"></td>
+                        </tr>
+                        <tr>
+                            <td>Ground Fl.</td>
+                            <td class="td-center"><input type="text"></td>
+                            <td class="td-center"><input type="text"></td>
+                            <td class="td-center"><input type="text"></td>
+                            <td class="td-center"><input type="text"></td>
+                            <td class="td-center"><input type="text"></td>
+                            <td class="td-center"><input type="text"></td>
+                            <td class="td-center"><input type="text"></td>
+                            <td class="td-center"><input type="text"></td>
+                        </tr>
+                    </tbody>
+                    <tfoot id="costFoot">
+                        <tr>
+                            <th colspan="4">Total Value of the Building <sup>1</sup></th>
+                            <td class="td-center"><input type="text"></td>
+                            <td class="td-center"><input type="text"></td>
+                            <td class="td-center"><input type="text"></td>
+                            <td class="td-center"><input type="text"></td>
+                            <td class="td-center"><input type="text"></td>
+                        </tr>
+                        <tr>
+                            <td colspan="7">Depreciation <sup>2</sup> @ <span class="auto-grow" contenteditable="true" role="textbox"></span>%</td>
+                            <td><input type="text"></td><td><input type="text"></td>
+                        </tr>
+                        <tr>
+                            <th colspan="7">Net Value of the Building</th>
+                            <td><input type="text"></td><td><input type="text"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+    <p>*Note:
+        <ol>
+            <li>Note: Building value has been considered based on Approved Plan and construction cost as per current market standards. </li>
+            <li>Average life of concrete structure has been considered as 70 Years. </li>
+        </ol>
+    </p>
+    <p>
+    As this structure is <span class="auto-grow" contenteditable="true" role="textbox"></span>-year-old, 
+    thus the Depreciation is considered as (100/70) × 
+    <input id="year2" type="text" style="width: 40px; display: inline-block;" readonly> 
+    = 
+    <input id="result" type="text" style="width: 40px; display: inline-block;" readonly> 
+    &cong;
+    <input id="percent" type="text" style="width: 40px; display: inline-block;" readonly>%.
+</p>
+
+<script>
+document.getElementById("year").addEventListener("input", function () {
+    const year = parseFloat(this.value) || 0;
+
+    // Copy year
+    document.getElementById("year2").value = year;
+
+    // Exact depreciation
+    const depreciation = (100 / 70) * year;
+    document.getElementById("result").value = depreciation.toFixed(2);
+
+    // Final output (integer)
+    document.getElementById("percent").value = Math.round(depreciation);
+});
+</script>
+                </div>
+            </div>
+            <img src="AKM Footer.png" class="report-footer-img" alt="Footer" crossorigin="anonymous">
+        </div>
+        <!-- ================= SHEET 9 (Price & Dec) ================= -->
+        <div class="sheet">
+            <img src="AMK Header.png" class="report-header-img" alt="Header" crossorigin="anonymous">
+            
+            <div class="sheet-content">
+                
+            <h2>J. Price Justification:</h2>
+                <table>
+                    <tr>
+                        <th style="width: 30%;">Maximum Price</th>
+                        <td style="width: 10px;">:</td>
+                        <td><input type="text"></td>
+                    </tr>
+                    <tr>
+                        <th>Minimum Price</th>
+                        <td>:</td>
+                        <td><input type="text"></td>
+                    </tr>
+                    <tr>
+                        <th>Last Buy-Sell Record</th>
+                        <td>:</td>
+                        <td><textarea placeholder="Enter details"></textarea></td>
+                    </tr>
+                    <tr>
+                        <th>Price justification</th>
+                        <td>:</td>
+                        <td><textarea placeholder="Enter details"></textarea></td>
+                    </tr>
+                </table>
+                <h2>K. About our overall Valuation:</h2>
+    <ol>
+        <li>Physical inspection and measure, as necessary.</li>
+        <li>Interview with local people.</li>
+        <li>Interview with owner.</li>
+        <li>Market price of recent transfer of property in nearby locality.</li>
+        <li>Access road and transport facility.</li>
+        <li>Current economic activity and development features in the locality.</li>
+        <li>Future prospect of the locality.</li>
+        <li>Present Market Value has been considered based on various parameters including but not limited to the above. 
+            <span class="no-break">Mentionable here that the said value may vary time to time on different aspects or situations which may not match with the basis of present valuation.</span>
+        </li>
+        <li>In case of Forced Sale Value, the rate is assumed based on the property’s demand, price, marketability and other factors, which may have relation to unforeseen or uncontrollable event that drives to sell the property within a short duration.</li>
+    </ol>
+
+    <h2>L. Declaration:</h2>
+    <ol>
+        <li>The valuation has been performed based on our physical inspection, verification, local market analysis and assessment to the best of our knowledge and all the information provided in this report is based on the property/ land related documents, other necessary documents and information as provided by the concerned Bank/NBFI/Officials/Property Owner/Borrower/Individual (the client). No responsibility is accepted for any errors resulting from incorrect information provided by the client.</li>
+        <li>The inspection was limited to a visual examination only. So, AMK shall not be held responsible, for any latent defects not apparent during inspection.</li>
+        <li>AMK’s responsibility is limited to the valuation of the said property only without considering any legal matter related to the property and documents as well.</li>
+        <li>This report is not a certificate of title or ownership. Legal verification should be undertaken independently.</li>
+        <li>The valuation reflects the market value on the date of inspection only. No responsibility is accepted for any changes in market conditions thereafter.</li>
+        <li>Except inspection, survey and valuation of the said property, AMK or any of its Officials has no interest directly or indirectly, at present or in near future in any manner whatsoever in the subject matter of this report.</li>
+        <li>This report is not intended to absolve the concerned parties from their contractual obligations.</li>
+        <li>This report is confidential and intended only for the named client. AMK accepts no liability to any third party for any loss or damage suffered as a result of reliance on this report.</li>
+        <li>The report is duly signed by the authorized signatories of AMK and it contains 18 (Eighteen) pages.</li>
+    </ol>
+            </div>
+
+            <img src="AKM Footer.png" class="report-footer-img" alt="Footer" crossorigin="anonymous">
+        </div>
+
+    </div>
+
+        <!-- ================= PHOTO SHEETS ================= -->
+        <!-- Populated via JS -->
+    </div>
+
+    <!-- CONTROL BAR -->
+    <div class="control-bar">
+        <button type="button" class="btn btn-add" onclick="universalAddFloor()">
+            <i class="fas fa-plus"></i> Add One Floor
+        </button>
+        <button type="button" class="btn btn-remove" onclick="universalRemoveFloor()">
+            <i class="fas fa-minus"></i> Remove Last Floor
+        </button>
+        <button class="btn btn-preview" onclick="togglePreview()" id="btn-preview">
+            <i class="fas fa-eye"></i> Preview
+        </button>
+        <button class="btn btn-edit" onclick="togglePreview()" id="btn-edit">
+            <i class="fas fa-pen"></i> Edit
+        </button>
+        <button class="btn btn-download" onclick="downloadPDF()">
+            <i class="fas fa-file-pdf"></i> Download PDF
+        </button>
+        <button class="btn btn-clear" onclick="clearForm()">
+            <i class="fas fa-trash"></i> Clear
+        </button>
+    </div>
+
+    <script>
+        // --- 1. CALCULATIONS ---
+
+        
+        // --- 2. SYNC RECIPIENT INFO ---
+        function syncRecipientData() {
+            const nameInput = document.getElementById('input-recipient-name');
+            const addressInput = document.getElementById('input-recipient-address');
+            document.getElementById('output-recipient-name').innerText = nameInput.value;
+            document.getElementById('output-recipient-address').innerText = addressInput.value;
+        }
+        // --- 2.1 GENERAL SYNC FOR ANY TWO ROW ---
+        function sync(source, targetId) {
+            document.getElementById(targetId).value = source.value;
+        }
+        function autoFillSurveyorDetails() {
+        const dropdown = document.getElementById('surveyor-select');
+        const desigField = document.getElementById('sur-designation');
+        const nidField = document.getElementById('sur-nid');
+        const contactField = document.getElementById('sur-contact');
+
+        const selectedOption = dropdown.options[dropdown.selectedIndex];
+
+        // 1. Fill the first table fields
+        desigField.value = selectedOption.getAttribute('data-designation') || "";
+        nidField.value = selectedOption.getAttribute('data-nid') || "";
+        contactField.value = selectedOption.getAttribute('data-contact') || "";
+
+        // 2. Sync to the second table
+        // Sync the Name (from the dropdown itself)
+        sync(dropdown, 'target-name'); 
+        
+        // Sync the others (from the hidden/readonly fields)
+        sync(desigField, 'target-designation');
+        sync(nidField, 'target-nid');
+        sync(contactField, 'target-contact');
+        }
+
+        // --- 3. PHOTO MANAGEMENT LOGIC ---
+        
+        let uploadedPhotos = []; 
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderPhotoSheets();
+        });
+
+        document.getElementById('image-uploader').addEventListener('change', function(event) {
+            handleFiles(Array.from(event.target.files));
+        });
+
+        function handleDrop(event) {
+            event.preventDefault();
+            if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+                handleFiles(Array.from(event.dataTransfer.files));
+            }
+        }
+
+        function handleFiles(files) {
+            if (files.length === 0) return;
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    uploadedPhotos.push({
+                        src: e.target.result,
+                        title: file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ")
+                    });
+                    renderPhotoSheets();
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        // Removed the problematic window.deletePhoto function
+
+        window.updatePhotoTitle = function(index, newTitle) {
+            uploadedPhotos[index].title = newTitle;
+        };
+
+        function renderPhotoSheets() {
+            const wrapper = document.getElementById('report-content');
+            
+            // Remove existing photo sheets
+            const existingSheets = document.querySelectorAll('.photo-sheet-dynamic');
+            existingSheets.forEach(sheet => sheet.remove());
+
+            const totalItems = uploadedPhotos.length + 1; 
+            const totalSheets = Math.ceil(totalItems / 2);
+
+            for (let i = 0; i < totalSheets; i++) {
+                const sheet = document.createElement('div');
+                sheet.className = 'sheet photo-sheet-dynamic';
+                
+                sheet.innerHTML = `
+                    <img src="AMK Header.png" class="report-header-img" alt="Header" crossorigin="anonymous">
+                    <div class="sheet-content photo-page-content" id="photo-sheet-content-${i}">
+                        <div class="annexure-header">
+                            ${i === 0 ? 'Annexure-I: Photograph of Property' : 'Annexure-I: Photograph of Property (Contd.)'}
+                        </div>
+                    </div>
+                    <img src="AKM Footer.png" class="report-footer-img" alt="Footer" crossorigin="anonymous">
+                `;
+                
+                wrapper.appendChild(sheet);
+                const contentContainer = document.getElementById(`photo-sheet-content-${i}`);
+
+                const startIndex = i * 2;
+                const endIndex = startIndex + 2; 
+                
+                for (let k = startIndex; k < endIndex; k++) {
+                    if (k < uploadedPhotos.length) {
+                        const photo = uploadedPhotos[k];
+                        const slot = document.createElement('div');
+                        slot.className = 'photo-slot';
+                        
+                        // IMPORTANT: Removed onclick and added data-index attribute for delegation
+                        slot.innerHTML = `
+                            <div class="photo-frame">
+                                <img src="${photo.src}" alt="Property Photo">
+                                <button type="button" class="delete-photo-btn" data-index="${k}">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <input type="text" class="photo-title" value="${photo.title}" oninput="updatePhotoTitle(${k}, this.value)">
+                        `;
+                        contentContainer.appendChild(slot);
+                    } else if (k === uploadedPhotos.length) {
+                        const addSlot = document.createElement('div');
+                        addSlot.className = 'photo-slot';
+                        addSlot.innerHTML = `
+                            <div class="add-photo-placeholder" onclick="document.getElementById('image-uploader').click()" ondragover="event.preventDefault()" ondrop="handleDrop(event)">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <p>Add Photo</p>
+                                <span>(Click or Drag & Drop)</span>
+                            </div>
+                        `;
+                        contentContainer.appendChild(addSlot);
+                    }
+                }
+            }
+        }
+        
+        // --- 3B. EVENT DELEGATION FOR DELETE BUTTON (THE FIX) ---
+        document.addEventListener('click', function(event) {
+            const deleteButton = event.target.closest('.delete-photo-btn');
+            if (deleteButton) {
+                event.stopPropagation();
+                // Get the index from the data attribute
+                const index = parseInt(deleteButton.getAttribute('data-index'));
+                
+                if (!isNaN(index) && index >= 0 && confirm("Delete this photo?")) {
+                    uploadedPhotos.splice(index, 1);
+                    renderPhotoSheets();
+                }
+            }
+        });
+
+
+        // --- 4. PREVIEW MODE ---
+        function togglePreview() {
+            const body = document.body;
+            const btnPreview = document.getElementById('btn-preview');
+            const btnEdit = document.getElementById('btn-edit');
+
+            body.classList.toggle('preview-mode');
+
+            if (body.classList.contains('preview-mode')) {
+                btnPreview.style.display = 'none';
+                btnEdit.style.display = 'flex';
+                window.scrollTo(0, 0);
+            } else {
+                btnPreview.style.display = 'flex';
+                btnEdit.style.display = 'none';
+            }
+        }
+
+        // --- 5. DOWNLOAD PDF ---
+        function downloadPDF() {
+            const element = document.getElementById('report-content');
+            const wrapper = document.querySelector('.report-wrapper');
+            
+            // Select the control buttons container
+            const controls = document.querySelector('.controls.no-print');
+            wrapper.classList.add('pdf-mode');
+            const inputs = element.querySelectorAll('input, textarea, select');
+            const originalDisplay = [];
+
+            inputs.forEach((input, index) => {
+                originalDisplay[index] = input.style.display;
+                if(input.type === 'file') return;
+
+                const span = document.createElement('span');
+                span.className = 'pdf-text-replacement'; 
+                
+                let value = input.value;
+                if (input.tagName === 'SELECT') {
+                    value = input.options[input.selectedIndex].text;
+                    if (value === 'Select type') value = '';
+                }
+                if (!value) value = '\u00A0'; 
+                
+                span.textContent = value;
+                const style = window.getComputedStyle(input);
+                span.style.fontFamily = style.fontFamily;
+                span.style.fontSize = style.fontSize;
+                span.style.fontWeight = style.fontWeight;
+                span.style.textAlign = style.textAlign;
+                span.style.display = 'inline-block';
+                span.style.whiteSpace = 'pre-wrap';
+                
+                if(input.classList.contains('photo-title')) {
+                     span.style.width = '100%';
+                     span.style.display = 'block';
+                     span.style.textAlign = 'center';
+                } else {
+                     span.style.width = input.scrollWidth + 'px'; 
+                }
+                
+                input.style.display = 'none';
+                input.parentNode.insertBefore(span, input);
+            });
+
+            const opt = {
+                margin:       0, 
+                filename:     'EBL Valuation Report.pdf',
+                image:        { type: 'jpeg', quality: 1.0 },
+                html2canvas:  { scale: 3, useCORS: true, scrollY: 0 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak:    { mode: 'css' } 
+            };
+
+            html2pdf().set(opt).from(element).save().then(function() {
+                wrapper.classList.remove('pdf-mode');  
+                const replacements = element.querySelectorAll('.pdf-text-replacement');
+                replacements.forEach(span => span.remove());
+                inputs.forEach((input, index) => {
+                    input.style.display = originalDisplay[index];
+                });
+            });
+        }
+
+        // --- 6. CLEAR FORM ---
+        function clearForm() {
+            if(confirm("Are you sure you want to clear all data? This includes uploaded photos.")) {
+                const inputs = document.querySelectorAll("input:not([type=file]), textarea, select");
+                inputs.forEach(input => input.value = "");
+                document.getElementById('output-recipient-name').innerText = "";
+                document.getElementById('output-recipient-address').innerText = "";
+                uploadedPhotos = [];
+                renderPhotoSheets();
+            }
+        }
+        
+        // --- 7. ADDING ROW TO THE TABLES ---
+        function getFloorLabel(index) {
+            if (index === 0) return "Ground Floor";
+            let j = index % 10, k = index % 100;
+            let suffix = "th";
+            if (j == 1 && k != 11) suffix = "st";
+            else if (j == 2 && k != 12) suffix = "nd";
+            else if (j == 3 && k != 13) suffix = "rd";
+            return index + "<sup>" + suffix + "</sup> Floor";
+        }
+        
+        function universalAddFloor() {
+            // 1. Table 1 (Standard Rows)
+            const t1 = document.getElementById("table1");
+            const t1Index = t1.rows.length - 1;
+            const row1 = t1.insertRow(-1);
+            row1.innerHTML = `<th>${getFloorLabel(t1Index)}</th>` + '<td class="td-center"><input type="text"></td>'.repeat(4);
+
+            // 2. Table 2 (NOW TRANSPOSED - Adding Rows)
+            const t2Body = document.getElementById("table2").getElementsByTagName('tbody')[0];
+            const t2Index = t2Body.rows.length;
+            const row2 = t2Body.insertRow(-1);
+            row2.innerHTML = `<th>${getFloorLabel(t2Index)}</th>` + '<td class="td-center"><input type="text"></td>'.repeat(8);
+
+            // 3. Work Completion Table
+            const tWork = document.getElementById("workCompletionTable").getElementsByTagName('tbody')[0];
+            const tWorkIndex = tWork.rows.length;
+            const rowWork = tWork.insertRow(-1);
+            rowWork.innerHTML = `<th>${getFloorLabel(tWorkIndex)}</th>` + '<td class="td-center"><input type="text"></td>'.repeat(11);
+
+            // 4. Cost Calculation Table
+            const tCost = document.getElementById("costBody");
+            const tCostIndex = tCost.rows.length - 1; // Accounting for Foundation row
+            const rowCost = tCost.insertRow(-1);
+            rowCost.innerHTML = `<td>${getFloorLabel(tCostIndex)}</td>` + '<td class="td-center"><input type="text" placeholder="Value"></td>'.repeat(8);
+        }
+        function universalRemoveFloor() {
+            // Table 1
+            const t1 = document.getElementById("table1");
+            if (t1.rows.length > 2) t1.deleteRow(-1);
+
+            // Table 2 (Transposed)
+            const t2Body = document.getElementById("table2").getElementsByTagName('tbody')[0];
+            if (t2Body.rows.length > 1) t2Body.deleteRow(-1);
+
+            // Work Completion
+            const tWork = document.getElementById("workCompletionTable").getElementsByTagName('tbody')[0];
+            if (tWork.rows.length > 1) tWork.deleteRow(-1);
+
+            // Cost Calculation
+            const tCost = document.getElementById("costBody");
+            if (tCost.rows.length > 2) tCost.deleteRow(-1);
+        }
+        // --- 8. CALCULATION LOGIC FOR ALL THE TABLES ---
+        
+        /** * CONSOLIDATED CALCULATION & COMMA FORMATTING LOGIC */
+        // Helper: Remove commas to get a clean number for math
+        function getRawValue(input) {
+            if (!input || !input.value) return 0;
+            return parseFloat(input.value.replace(/,/g, '')) || 0;
+        }
+        
+        // Helper: Add commas back for display
+        function formatWithCommas(num, decimals = 0) {
+            if (isNaN(num)) return "0";
+            return num.toLocaleString(undefined, {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: decimals
+            });
+        }
+
+document.addEventListener('input', function (e) {
+    const target = e.target;
+
+    // 1. AREA DEVIATION (Sheet 8)
+    if (target.closest('#table1')) {
+        const row = target.closest('tr');
+        const plan = getRawValue(row.cells[1].querySelector('input'));
+        const phys = getRawValue(row.cells[2].querySelector('input'));
+        
+        const devSft = phys - plan;
+        const devPct = plan !== 0 ? (devSft / plan) * 100 : 0;
+
+        // Format inputs and results
+        if (target.type === 'text') target.value = formatWithCommas(getRawValue(target), 2);
+        row.cells[3].querySelector('input').value = formatWithCommas(devSft, 2);
+        row.cells[4].querySelector('input').value = devPct.toFixed(2) + "%";
+    }
+
+    // 2. SETBACK DEVIATION (Sheet 9 - Section G)
+    if (target.closest('table') && target.closest('table').previousElementSibling?.innerText?.includes('G. Setback')) {
+        const row = target.closest('tr');
+        const plan = getRawValue(row.cells[1].querySelector('input'));
+        const phys = getRawValue(row.cells[2].querySelector('input'));
+        
+        target.value = formatWithCommas(getRawValue(target), 2);
+        row.cells[3].querySelector('input').value = formatWithCommas(phys - plan, 2);
+    }
+
+    // 3. CONSTRUCTION WORK % (Sheet 9 - Section H)
+    // Weights: Structure(37), Brick(9), Wood(7), Metal(4), Plumbing(8), Elec(9), Plaster(6), Floor(8), Alum(6), Paint(6)
+    if (target.closest('#workCompletionTable')) {
+        const weights = [37, 9, 7, 4, 8, 9, 6, 8, 6, 6];
+        const row = target.closest('tr');
+        const inputs = row.querySelectorAll('input');
+        let total = 0;
+
+        for (let i = 0; i < weights.length; i++) {
+            let val = getRawValue(inputs[i]);
+            if (val > 100) val = 100; // Cap single category at 100%
+            total += (val / 100) * weights[i];
+        }
+        const integerTotal = Math.ceil(total); 
+        inputs[10].value = integerTotal;
+        
+        updateCostTableFromCompletion(row.rowIndex, integerTotal);
+    }
+
+    // 4. FLOOR-WISE BUILDING VALUE (Sheet 10)
+    if (target.closest('#costCalculationTable') || target.id === 'year') {
+        calculateBuildingValueTable();
+    }
+});
+
+function calculateBuildingValueTable() {
+    const rows = document.querySelectorAll('#costBody tr');
+    let totalD = 0, totalE = 0, totalG = 0, totalH = 0;
+
+    rows.forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        if (inputs.length < 8) return;
+
+        const a = getRawValue(inputs[0]); // Area Plan
+        const b = getRawValue(inputs[1]); // Area Phys
+        const c = getRawValue(inputs[2]); // Cost/Sft
+        const f = getRawValue(inputs[5]) / 100; // Completion %
+
+        const d = a * c; // Est Plan
+        const e = b * c; // Est Phys
+        const g = d * f; // Present Plan
+        const h = e * f; // Present Phys
+
+        inputs[3].value = formatWithCommas(d);
+        inputs[4].value = formatWithCommas(e);
+        inputs[6].value = formatWithCommas(g);
+        inputs[7].value = formatWithCommas(h);
+
+        totalD += d; totalE += e; totalG += g; totalH += h;
+    });
+
+    // Update Totals & Depreciation
+    const footInputs = document.querySelectorAll('#costFoot input');
+    footInputs[0].value = formatWithCommas(totalD);
+    footInputs[1].value = formatWithCommas(totalE);
+    footInputs[3].value = formatWithCommas(totalG);
+    footInputs[4].value = formatWithCommas(totalH);
+
+    const depPercent = parseFloat(document.getElementById('percent').value) || 0;
+    const depG = (totalG * depPercent) / 100;
+    const depH = (totalH * depPercent) / 100;
+
+    // footInputs[6,7] are Depreciation; [8,9] are Net Value
+    footInputs[6].value = formatWithCommas(depG);
+    footInputs[7].value = formatWithCommas(depH);
+    footInputs[8].value = formatWithCommas(totalG - depG);
+    footInputs[9].value = formatWithCommas(totalH - depH);
+}
+
+function updateCostTableFromCompletion(rowIndex, percentage) {
+    const costBody = document.getElementById('costBody');
+    const costRow = costBody?.rows[rowIndex - 1];
+    if (costRow) {
+        const completionInput = costRow.querySelectorAll('input')[5];
+        completionInput.value = percentage;
+        calculateBuildingValueTable(); 
+    }
+}
+
+    </script>
+</body>
+</html>

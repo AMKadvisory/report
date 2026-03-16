@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AMK Advisory – Car Valuation Portal</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy:#0d1b2a;--navy-mid:#1b2d42;--gold:#c9a84c;--gold-light:#e8c97a;
+            --cream:#faf6f0;--white:#ffffff;--gray-100:#f4f6f8;--gray-200:#e8edf2;
+            --gray-400:#94a3b8;--gray-600:#64748b;--gray-800:#334155;
+            --danger:#dc2626;--success:#16a34a;
+            --font-d:'Cormorant Garamond',Georgia,serif;
+            --font-b:'DM Sans',sans-serif;
+            --r-sm:6px;--r-md:10px;--r-lg:16px;
+            --sh-sm:0 1px 3px rgba(13,27,42,0.08);
+            --sh-lg:0 12px 40px rgba(13,27,42,0.18);
+            --tr:0.22s cubic-bezier(0.4,0,0.2,1);
+        }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+        body{font-family:var(--font-b);background:var(--cream);min-height:100vh;}
+        .auth-page{min-height:100vh;display:grid;grid-template-columns:1fr 1fr;}
+        .auth-left{background:var(--navy);display:flex;flex-direction:column;justify-content:center;padding:4rem;position:relative;overflow:hidden;}
+        .auth-left::before{content:'';position:absolute;top:-100px;right:-100px;width:400px;height:400px;border-radius:50%;background:rgba(201,168,76,0.08);pointer-events:none;}
+        .auth-brand{font-family:var(--font-d);font-size:3rem;font-weight:700;color:var(--gold);line-height:1;margin-bottom:.75rem;}
+        .auth-tagline{font-size:.95rem;color:var(--gray-400);margin-bottom:3rem;max-width:340px;line-height:1.7;}
+        .auth-feature{display:flex;align-items:center;gap:12px;margin-bottom:1rem;color:var(--gray-400);font-size:.9rem;}
+        .auth-feature-icon{width:36px;height:36px;border-radius:var(--r-sm);flex-shrink:0;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.2);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:1rem;}
+        .auth-right{display:flex;flex-direction:column;justify-content:center;align-items:center;padding:4rem;background:var(--cream);}
+        .auth-card{width:100%;max-width:420px;background:var(--white);border-radius:var(--r-lg);padding:2.5rem;box-shadow:var(--sh-lg);}
+        .auth-card-title{font-family:var(--font-d);font-size:1.8rem;font-weight:700;color:var(--navy);margin-bottom:4px;}
+        .auth-card-sub{font-size:.875rem;color:var(--gray-400);margin-bottom:2rem;}
+        .tab-switcher{display:flex;background:var(--gray-100);padding:4px;border-radius:var(--r-sm);gap:4px;margin-bottom:1.75rem;}
+        .tab-btn{flex:1;padding:10px;border:none;background:transparent;font-family:var(--font-b);font-size:.9rem;font-weight:500;cursor:pointer;color:var(--gray-600);border-radius:var(--r-sm);transition:all var(--tr);}
+        .tab-btn.active{background:var(--white);color:var(--navy);box-shadow:var(--sh-sm);}
+        .form-panel{display:none;}
+        .form-panel.active{display:block;}
+        .form-group{margin-bottom:1.1rem;}
+        .form-label{display:block;font-size:.85rem;font-weight:500;color:var(--gray-800);margin-bottom:5px;}
+        .form-control{width:100%;padding:.6rem .9rem;border:1.5px solid var(--gray-200);border-radius:var(--r-sm);font-family:var(--font-b);font-size:.9rem;color:var(--navy);background:var(--white);outline:none;transition:border-color var(--tr),box-shadow var(--tr);}
+        .form-control:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,0.15);}
+        .form-control::placeholder{color:var(--gray-400);}
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:.55rem 1.2rem;border-radius:var(--r-sm);font-family:var(--font-b);font-size:.875rem;font-weight:500;border:none;cursor:pointer;transition:all var(--tr);text-decoration:none;white-space:nowrap;}
+        .btn:disabled{opacity:.55;cursor:not-allowed;}
+        .btn-primary{background:var(--gold);color:var(--navy);width:100%;padding:.7rem;margin-top:8px;}
+        .btn-primary:hover:not(:disabled){background:var(--gold-light);}
+        .field-error{color:var(--danger);font-size:.78rem;margin-top:4px;display:block;min-height:14px;}
+        .general-error{background:#fee2e2;color:#991b1b;border-radius:var(--r-sm);padding:.6rem .9rem;font-size:.85rem;margin-bottom:10px;display:none;}
+        .success-msg{background:#dcfce7;color:#166534;border-radius:var(--r-sm);padding:.6rem .9rem;font-size:.85rem;margin-top:10px;display:none;text-align:center;}
+        #loading-overlay{position:fixed;inset:0;background:rgba(13,27,42,.6);display:none;align-items:center;justify-content:center;z-index:9999;}
+        .spinner{width:44px;height:44px;border:4px solid rgba(201,168,76,.3);border-top-color:var(--gold);border-radius:50%;animation:spin .75s linear infinite;}
+        @keyframes spin{to{transform:rotate(360deg);}}
+        @media(max-width:768px){.auth-page{grid-template-columns:1fr;}.auth-left{display:none;}.auth-right{padding:2rem 1rem;}}
+    </style>
+</head>
+<body>
+
+<div id="loading-overlay" style="display:none;"><div class="spinner"></div></div>
+
+<div class="auth-page">
+    <div class="auth-left">
+        <div class="auth-brand">AMK<br>Advisory</div>
+        <p class="auth-tagline">Professional inspection and valuation portal. Generate certified reports with ease.</p>
+        <div class="auth-feature"><div class="auth-feature-icon">🔍</div><span>Comprehensive inspection forms</span></div>
+        <div class="auth-feature"><div class="auth-feature-icon">📄</div><span>Instant PDF report generation</span></div>
+        <div class="auth-feature"><div class="auth-feature-icon">💾</div><span>Save progress and resume anytime</span></div>
+        <div class="auth-feature"><div class="auth-feature-icon">🛡️</div><span>Secure cloud storage for all reports</span></div>
+    </div>
+    <div class="auth-right">
+        <div class="auth-card">
+            <h2 class="auth-card-title">Welcome</h2>
+            <p class="auth-card-sub">Sign in to access your dashboard</p>
+            <div class="tab-switcher">
+                <button class="tab-btn active" onclick="switchTab('login')">Sign In</button>
+                <button class="tab-btn" onclick="switchTab('register')">Register</button>
+            </div>
+
+            <!-- LOGIN -->
+            <div id="panel-login" class="form-panel active">
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" id="login-email" class="form-control" placeholder="you@example.com">
+                    <span class="field-error" id="login-email-err"></span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="login-password" class="form-control" placeholder="••••••••">
+                    <span class="field-error" id="login-pass-err"></span>
+                </div>
+                <div class="general-error" id="login-err"></div>
+                <button class="btn btn-primary" id="login-btn" onclick="handleLogin()">Sign In</button>
+            </div>
+
+            <!-- REGISTER -->
+            <div id="panel-register" class="form-panel">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" id="reg-name" class="form-control" placeholder="Your full name">
+                    <span class="field-error" id="reg-name-err"></span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" id="reg-email" class="form-control" placeholder="you@example.com">
+                    <span class="field-error" id="reg-email-err"></span>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="reg-password" class="form-control" placeholder="Min. 8 characters">
+                    <span class="field-error" id="reg-pass-err"></span>
+                </div>
+                <div class="general-error" id="reg-err"></div>
+                <button class="btn btn-primary" id="register-btn" onclick="handleRegister()">Create Account</button>
+                <div class="success-msg" id="reg-success">✅ Account created! You can now sign in below.</div>
+            </div>
+        </div>
+        <p style="margin-top:1.5rem;font-size:.8rem;color:var(--gray-400);text-align:center;">AMK Advisory Limited · Dhaka, Bangladesh</p>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
+
+<script>
+const SUPABASE_URL      = 'https://pdmcykghinfxrpdqocoj.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBkbWN5a2doaW5meHJwZHFvY29qIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NDkwMDMsImV4cCI6MjA4ODUyNTAwM30.9fbjjWj7r8hjiqhyp2Yf3j86KBlJIo9idysSIRqMWxE';
+
+let db;
+(function initDB() {
+    const lib = window.supabase;
+    if (!lib || typeof lib.createClient !== 'function') {
+        document.getElementById('reg-err').textContent = 'Failed to load Supabase library. Check your internet connection and refresh.';
+        document.getElementById('reg-err').style.display = 'block';
+        document.getElementById('login-err').textContent = 'Failed to load Supabase library. Refresh the page.';
+        document.getElementById('login-err').style.display = 'block';
+        return;
+    }
+    db = lib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+})();
+
+function showOverlay()  { document.getElementById('loading-overlay').style.display = 'flex'; }
+function hideOverlay()  { document.getElementById('loading-overlay').style.display = 'none'; }
+
+function showErr(id, msg) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = msg;
+    el.style.display = 'block';
+}
+function clearErrors() {
+    ['login-email-err','login-pass-err','login-err',
+     'reg-name-err','reg-email-err','reg-pass-err','reg-err'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.textContent = ''; el.style.display = 'none'; }
+    });
+}
+
+function switchTab(tab) {
+    clearErrors();
+    document.getElementById('reg-success').style.display = 'none';
+    document.querySelectorAll('.tab-btn').forEach((b, i) => {
+        b.classList.toggle('active', (tab==='login'&&i===0)||(tab==='register'&&i===1));
+    });
+    document.getElementById('panel-login').classList.toggle('active', tab === 'login');
+    document.getElementById('panel-register').classList.toggle('active', tab === 'register');
+}
+
+// ── LOGIN ────────────────────────────────────────────────────
+async function handleLogin() {
+    clearErrors();
+    if (!db) { showErr('login-err', 'Database not initialised. Refresh the page.'); return; }
+
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const btn      = document.getElementById('login-btn');
+
+    if (!email)    { showErr('login-email-err', 'Email is required.'); return; }
+    if (!password) { showErr('login-pass-err',  'Password is required.'); return; }
+
+    btn.disabled = true; btn.textContent = 'Signing in...'; showOverlay();
+    try {
+        const { data, error } = await db.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+
+        // Sync full_name from auth metadata into profiles table
+        // This ensures admin dashboard always shows the correct display name
+        const metaName = data.user?.user_metadata?.full_name;
+        if (metaName) {
+            await db.from('profiles').upsert(
+                { id: data.user.id, full_name: metaName },
+                { onConflict: 'id' }
+            );
+        }
+
+        window.location.href = 'dashboard.html';
+    } catch (err) {
+        hideOverlay();
+        showErr('login-err', err.message || 'Login failed.');
+        btn.disabled = false; btn.textContent = 'Sign In';
+    }
+}
+
+// ── REGISTER ─────────────────────────────────────────────────
+async function handleRegister() {
+    clearErrors();
+    if (!db) { showErr('reg-err', 'Database not initialised. Refresh the page.'); return; }
+
+    const name     = document.getElementById('reg-name').value.trim();
+    const email    = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+    const btn      = document.getElementById('register-btn');
+
+    if (!name)               { showErr('reg-name-err',  'Name is required.'); return; }
+    if (!email)              { showErr('reg-email-err', 'Email is required.'); return; }
+    if (password.length < 8) { showErr('reg-pass-err',  'Password must be at least 8 characters.'); return; }
+
+    btn.disabled = true; btn.textContent = 'Creating account...'; showOverlay();
+    try {
+        const { data, error } = await db.auth.signUp({
+            email, password,
+            options: { data: { full_name: name } }   // stored in raw_user_meta_data.full_name
+        });
+        if (error) throw error;
+
+        // Also write directly to profiles table immediately
+        if (data.user) {
+            await db.from('profiles').upsert(
+                { id: data.user.id, full_name: name, email },
+                { onConflict: 'id' }
+            );
+        }
+
+        hideOverlay();
+        document.getElementById('reg-success').style.display = 'block';
+        btn.textContent = '✅ Done! Switch to Sign In';
+    } catch (err) {
+        hideOverlay();
+        showErr('reg-err', err.message || 'Registration failed.');
+        btn.disabled = false; btn.textContent = 'Create Account';
+    }
+}
+
+// ── REDIRECT IF ALREADY LOGGED IN ────────────────────────────
+window.addEventListener('load', async function() {
+    if (!db) return;
+    try {
+        const { data: { session } } = await db.auth.getSession();
+        if (session) window.location.href = 'dashboard.html';
+    } catch(e) { /* not logged in, stay */ }
+});
+
+// ── ENTER KEY SUPPORT ────────────────────────────────────────
+document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    if (document.getElementById('panel-login').classList.contains('active')) handleLogin();
+    else handleRegister();
+});
+</script>
+</body>
+</html>

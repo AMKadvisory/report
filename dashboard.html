@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard – AMK Valuation Portal</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .submissions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.25rem; }
+        .welcome-banner { background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%); border-radius: var(--radius-lg); padding: 2rem 2.5rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .welcome-text h2 { font-family: var(--font-display); font-size: 1.8rem; color: var(--gold); margin-bottom: 4px; }
+        .welcome-text p { color: var(--gray-400); font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="navbar-brand">AMK <span>Associates</span></div>
+    <div class="navbar-right">
+        <div class="navbar-user">
+            <div class="user-avatar-sm" id="avatar-initial">?</div>
+            <span id="user-name">Loading...</span>
+        </div>
+        <a href="admin.html" id="admin-link" class="btn btn-secondary btn-sm" style="display:none;">Admin</a>
+        <button class="btn btn-outline btn-sm" onclick="Auth.logout()">Sign Out</button>
+    </div>
+</nav>
+
+<div class="page-container">
+    <div class="welcome-banner">
+        <div class="welcome-text">
+            <h2>Good day, <span id="banner-name">--</span></h2>
+            <p>Manage your car valuation reports and track submission status.</p>
+        </div>
+        <div style="position:relative;display:inline-block;" id="new-report-menu">
+            <button class="btn btn-primary btn-lg" onclick="toggleNewMenu()">+ New Report ▾</button>
+            <div id="new-report-dropdown" style="display:none;position:absolute;right:0;top:110%;background:white;border:1px solid var(--gray-200);border-radius:var(--radius-md);box-shadow:var(--shadow-md);min-width:220px;z-index:100;overflow:hidden;">
+                <a href="form.html"          style="display:block;padding:0.75rem 1.25rem;font-size:0.875rem;color:var(--navy);text-decoration:none;transition:background var(--transition);" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='white'">🚗 Vehicle Valuation</a>
+                <a href="property-form.html"          style="display:block;padding:0.75rem 1.25rem;font-size:0.875rem;color:var(--navy);text-decoration:none;transition:background var(--transition);" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='white'">🏠 Property Valuation</a>
+                <a href="ebl-land-building-form.html" style="display:block;padding:0.75rem 1.25rem;font-size:0.875rem;color:var(--navy);text-decoration:none;transition:background var(--transition);" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='white'">🏗️ EBL Land &amp; Building</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-header">
+        <div>
+            <div class="page-title">My Reports</div>
+            <div class="page-subtitle">All your submitted and in-progress valuation reports</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;">
+            <div class="filter-tabs" style="margin-bottom:0;">
+                <button class="filter-tab active" onclick="filterBy('all',this)">All</button>
+                <button class="filter-tab" onclick="filterBy('draft',this)">Drafts</button>
+                <button class="filter-tab" onclick="filterBy('submitted',this)">Submitted</button>
+                <button class="filter-tab" onclick="filterBy('reviewed',this)">Reviewed</button>
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="loadSubmissions()">Refresh</button>
+        </div>
+    </div>
+
+    <div class="submissions-grid" id="submissions-list">
+        <div class="loading-spinner"></div>
+    </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- Shared modules — to change PDF edit pdf-template.js, to change auth edit auth.js -->
+<script src="config.js"></script>
+<script src="auth.js"></script>
+<script src="ui.js"></script>
+<script src="core/db.js"></script>
+<script src="core/pdf-engine.js"></script>
+<script src="forms/vehicle-valuation/pdf-template.js"></script>
+<script src="forms/property-valuation/pdf-template.js"></script>
+<script src="forms/ebl-land-building/pdf-template.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  dashboard.html  —  page-specific logic only
+//  To change PDF layout  → forms/vehicle-valuation/pdf-template.js
+//  To change auth        → auth.js
+//  To change DB queries  → core/db.js
+// ═══════════════════════════════════════════════════════════
+let currentUserId = null;
+let allSubmissions = [];
+
+async function init() {
+    const session = await Auth.requireAuth();
+    if (!session) return;
+    currentUserId = session.user.id;
+    const profile = await Auth.getProfile(session.user.id);
+    document.getElementById('user-name').textContent = profile.full_name || profile.email;
+    document.getElementById('banner-name').textContent = (profile.full_name || profile.email).split(' ')[0];
+    document.getElementById('avatar-initial').textContent = (profile.full_name || profile.email)[0].toUpperCase();
+    if (profile.role === 'admin') document.getElementById('admin-link').style.display = 'inline-flex';
+    await loadSubmissions();
+}
+
+async function loadSubmissions() {
+    const container = document.getElementById('submissions-list');
+    container.innerHTML = '<div class="loading-spinner"></div>';
+    try {
+        const { data, error } = await db.from('submissions').select('*').eq('user_id', currentUserId).order('updated_at', { ascending: false });
+        if (error) throw error;
+        allSubmissions = data;
+        renderCards(data);
+    } catch(err) { container.innerHTML = `<div class="error-msg">Failed to load: ${err.message}</div>`; }
+}
+
+function renderCards(list) {
+    const container = document.getElementById('submissions-list');
+    if (list.length === 0) {
+        container.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+            <div class="empty-icon">&#128203;</div>
+            <h3>No reports yet</h3>
+            <p>Start your first car valuation report.</p>
+            <a href="form.html"                  class="btn btn-primary"   style="margin-top:0.5rem">🚗 Vehicle Valuation</a>
+            <a href="property-form.html"         class="btn btn-secondary" style="margin-top:0.5rem;margin-left:0.5rem;">🏠 Property Valuation</a>
+            <a href="ebl-land-building-form.html"class="btn btn-secondary" style="margin-top:0.5rem;margin-left:0.5rem;">🏗️ EBL Land &amp; Building</a>
+        </div>`;
+        return;
+    }
+    container.innerHTML = list.map(sub => {
+        const fd         = sub.form_data || {};
+        const formType   = fd._formType || sub.form_type || 'vehicle-valuation';
+        const isProperty = formType === 'property-valuation';
+        const isEBL      = formType === 'ebl-land-building';
+        const formUrl    = isEBL ? 'ebl-land-building-form.html' : isProperty ? 'property-form.html' : 'form.html';
+        const typeIcon   = isEBL ? '🏗️' : isProperty ? '🏠' : '🚗';
+        const fileRef    = (isProperty || isEBL)
+            ? (fd.property_location || fd.valuation_ref_no || (isEBL ? 'EBL Land & Building' : 'Property Report'))
+            : (fd.file_reference_number || 'Vehicle Report');
+        const date       = new Date(sub.updated_at).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
+        const sc         = {draft:'status-draft',submitted:'status-submitted',reviewed:'status-reviewed'}[sub.status] || '';
+        const sl         = sub.status.charAt(0).toUpperCase() + sub.status.slice(1);
+        const letterRef  = (isProperty||isEBL) ? (fd.reference_no || '--') : (fd.letter_ref || '--');
+        const referredBy = (isProperty||isEBL) ? (fd.reference_account_name || '--') : (fd.referred_by || '--');
+        return `<div class="submission-card">
+            <div class="card-header">
+                <div class="card-title">${typeIcon} ${fileRef}</div>
+                <span class="status-badge ${sc}">${sl}</span>
+            </div>
+            <div class="card-meta" style="gap:0.4rem;flex-direction:column">
+                <span style="display:flex;gap:0.4rem;align-items:center">
+                    <span style="color:var(--gray-500);font-size:0.7rem;text-transform:uppercase;letter-spacing:.04em;min-width:90px">${isProperty ? 'Ref No.' : 'Letter Ref'}</span>
+                    <span style="font-weight:600;font-size:0.82rem">${letterRef}</span>
+                </span>
+                <span style="display:flex;gap:0.4rem;align-items:center">
+                    <span style="color:var(--gray-500);font-size:0.7rem;text-transform:uppercase;letter-spacing:.04em;min-width:90px">${isProperty ? 'Account' : 'Referred By'}</span>
+                    <span style="font-weight:600;font-size:0.82rem">${referredBy}</span>
+                </span>
+            </div>
+            <div class="card-meta" style="margin-top:0.4rem"><span>Updated: ${date}</span></div>
+            <div class="card-actions" style="margin-top:1rem">
+                <a href="${formUrl}?id=${sub.id}" class="btn btn-sm btn-outline">${sub.status==='draft' ? 'Continue' : 'View'}</a>
+                <button class="btn btn-sm btn-primary" onclick="downloadReport('${sub.id}','${formType}')">PDF</button>
+                ${sub.status==='draft' ? `<button class="btn btn-sm btn-danger" onclick="deleteSubmission('${sub.id}')">Delete</button>` : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function filterBy(f, btn) {
+    document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderCards(f === 'all' ? allSubmissions : allSubmissions.filter(s => s.status === f));
+}
+
+async function downloadReport(id, formType) {
+    try {
+        const sub = allSubmissions.find(s => s.id === id);
+        let formData = sub ? sub.form_data : null;
+        if (!formData) {
+            const { data } = await db.from('submissions').select('*').eq('id', id).single();
+            formData = data?.form_data;
+        }
+        const type = formType || formData?._formType || 'vehicle-valuation';
+        if (type === 'property-valuation') {
+            await PDFEngine.generate(formData, PropertyValuationPDF);
+        } else if (type === 'ebl-land-building') {
+            await PDFEngine.generate(formData, EBLLandBuildingPDF);
+        } else {
+            await PDFEngine.generate(formData, VehicleValuationPDF);
+        }
+    } catch(err) { UI.showToast('PDF failed: ' + err.message, 'error'); }
+}
+
+function toggleNewMenu() {
+    const dd = document.getElementById('new-report-dropdown');
+    dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
+document.addEventListener('click', e => {
+    const menu = document.getElementById('new-report-menu');
+    if (menu && !menu.contains(e.target)) {
+        const dd = document.getElementById('new-report-dropdown');
+        if (dd) dd.style.display = 'none';
+    }
+});
+
+async function deleteSubmission(id) {
+    if (!confirm('Delete this draft? This cannot be undone.')) return;
+    try {
+        const { error } = await db.from('submissions').delete().eq('id', id);
+        if (error) throw error;
+        UI.showToast('Draft deleted', 'success');
+        await loadSubmissions();
+    } catch(err) { UI.showToast('Error: ' + err.message, 'error'); }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
