@@ -28,14 +28,12 @@
         .save-dot.saving { background:var(--gold); animation:pulse 1s infinite; }
         @keyframes pulse { 0%,100%{opacity:1;}50%{opacity:0.4;} }
         .nav-section-label { font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:var(--gray-400); padding:1rem 1.5rem 0.4rem; }
-        /* Valuation highlight */
         .valuation-highlight { background:linear-gradient(135deg,var(--navy) 0%,var(--navy-mid) 100%); border-radius:var(--radius-md); padding:1.5rem; margin-bottom:1.5rem; }
         .val-row { display:grid; grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr; gap:0.75rem; margin-bottom:0.5rem; }
         .vh-label { font-size:0.72rem; color:var(--gray-400); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px; }
         .vh-input { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; border-radius:var(--radius-sm); padding:0.4rem 0.6rem; width:100%; font-family:var(--font-display); font-size:1.1rem; font-weight:600; outline:none; }
         .vh-input[readonly] { color:var(--gold); cursor:default; }
         .vh-input::placeholder { color:rgba(255,255,255,0.3); }
-        /* Floor tables */
         .floor-table-wrapper { overflow-x:auto; margin-bottom:1rem; }
         .floor-table { width:100%; border-collapse:collapse; font-size:0.82rem; }
         .floor-table th, .floor-table td { border:1px solid var(--gray-200); padding:0.4rem 0.5rem; text-align:center; vertical-align:middle; }
@@ -82,7 +80,8 @@
         <div class="section-nav-item"        onclick="showSection('sec-letter',this)"><span>✉️</span> Cover Letter</div>
         <div class="section-nav-item"        onclick="showSection('sec-summary',this)"><span>📊</span> Summary</div>
         <div class="nav-section-label">Property Details</div>
-        <div class="section-nav-item" onclick="showSection('sec-ab',this)"><span>🏢</span> A. Account &amp; B. Owner</div>
+        <div class="section-nav-item" onclick="showSection('sec-a',this)"><span>🏢</span> A. Account</div>
+        <div class="section-nav-item" onclick="showSection('sec-b',this)"><span>👤</span> B. Property Owner</div>
         <div class="section-nav-item" onclick="showSection('sec-cd',this)"><span>📜</span> C. Schedule &amp; D. ID</div>
         <div class="nav-section-label">Features &amp; Construction</div>
         <div class="section-nav-item" onclick="showSection('sec-e',this)"><span>🏗️</span> E. Other Features</div>
@@ -207,7 +206,6 @@
                 <div class="form-row"><div class="form-group"><label class="form-label">File Receiving Date</label><input type="date" class="form-control" data-field="file_receiving_date"></div><div class="form-group"><label class="form-label">Valuation Ref No.</label><input type="text" class="form-control" data-field="valuation_ref_no"></div></div>
                 <div class="form-row"><div class="form-group"><label class="form-label">Valuation Date</label><input type="date" class="form-control" data-field="valuation_date"></div><div class="form-group"><label class="form-label">Property Location</label><input type="text" class="form-control" data-field="property_location"></div></div>
                 <div class="form-group"><label class="form-label">Valuation Conducted By</label><textarea class="form-control" data-field="valuation_conducted_by" rows="2" placeholder="AMK Associates Limited"></textarea></div>
-                <!-- Surveyor on Sheet 3 in EBL -->
                 <div class="form-row"><div class="form-group"><label class="form-label">Surveyor Name</label><input type="text" class="form-control" data-field="surveyor_name"></div><div class="form-group"><label class="form-label">Designation</label><input type="text" class="form-control" data-field="surveyor_designation"></div></div>
                 <div class="form-row"><div class="form-group"><label class="form-label">NID Number</label><input type="text" class="form-control" data-field="surveyor_nid"></div><div class="form-group"><label class="form-label">Contact Number</label><input type="text" class="form-control" data-field="surveyor_contact"></div></div>
                 <div class="form-row"><div class="form-group"><label class="form-label">Type of Property</label><select class="form-control" data-field="property_type"><option value="">Select type</option><option>Freehold</option><option>Leasehold</option></select></div><div class="form-group"><label class="form-label">Type of Property Seller</label><input type="text" class="form-control" data-field="property_seller_type"></div></div>
@@ -215,14 +213,18 @@
             </div>
         </div>
 
-        <!-- ══ SHEET 4: A & B ══ -->
-        <div class="report-section" id="sec-ab">
+        <!-- ══ SHEET 4A: A. PARTICULARS OF ACCOUNT ══ -->
+        <div class="report-section" id="sec-a">
             <div class="section-card">
                 <div class="section-heading">🏢 A. Particulars of Account</div>
                 <div class="form-group"><label class="form-label">A/C Name</label><input type="text" class="form-control" data-field="ac_name"></div>
-                <div class="form-group"><label class="form-label">Contact Person Name</label><input type="text" class="form-control" data-field="contact_person_name"></div></div>
+                <div class="form-group"><label class="form-label">Contact Person Name</label><input type="text" class="form-control" data-field="contact_person_name"></div>
                 <div class="form-group"><label class="form-label">Mobile Number of Contact Person</label><input type="text" class="form-control" data-field="mobile_number"></div>
             </div>
+        </div>
+
+        <!-- ══ SHEET 4B: B. PARTICULARS OF PROPERTY OWNER ══ -->
+        <div class="report-section" id="sec-b">
             <div class="section-card">
                 <div class="section-heading">👤 B. Particulars of Property Owner</div>
                 <div class="form-group"><label class="form-label">Property Owner(s) Name</label><input type="text" class="form-control" data-field="owner_name"></div>
@@ -242,7 +244,7 @@
                 <div class="form-row"><div class="form-group"><label class="form-label">Mouza</label><input type="text" class="form-control" data-field="mouza"></div><div class="form-group"><label class="form-label">JL No.</label><input type="text" class="form-control" data-field="jl_no"></div></div>
                 <div class="form-row"><div class="form-group"><label class="form-label">Local Authority</label><input type="text" class="form-control" data-field="local_authority"></div><div class="form-group"><label class="form-label">Land Office</label><input type="text" class="form-control" data-field="land_office"></div></div>
                 <div class="form-row"><div class="form-group"><label class="form-label">Sub-Register Office</label><input type="text" class="form-control" data-field="sub_register_office"></div><div class="form-group"><label class="form-label">Khatian No.</label><input type="text" class="form-control" data-field="khatian_no"></div></div>
-                <div class="form-row"><div class="form-group"><label class="form-label">Corresponding Dag No.</label><input type="text" class="form-control" data-field="dag_no"></div><div class="form-group"><label class="form-label">Deed Number &amp; Date</label><input type="text" class="form-control" data-field="deed_number_date"></div></div>
+                <div class="form-row"><div class="form-group"><label class="form-label">Corresponding Dag No.</label><input type="text" class="form-control" data-field="dag_no"></div><div class="form-group"><label class="form-label">Deed Number &amp; Registration Date</label><input type="text" class="form-control" data-field="deed_number_date"></div></div>
                 <div class="form-row"><div class="form-group"><label class="form-label">Mutation Khatian No.</label><input type="text" class="form-control" data-field="mutation_khatian_no"></div><div class="form-group"><label class="form-label">Jote No.</label><input type="text" class="form-control" data-field="jote_no"></div></div>
                 <div class="form-row"><div class="form-group"><label class="form-label">DCR No.</label><input type="text" class="form-control" data-field="dcr_no"></div><div class="form-group"><label class="form-label">GRR No.</label><input type="text" class="form-control" data-field="grr_no"></div></div>
                 <div class="form-row"><div class="form-group"><label class="form-label">Land Type (LDTR)</label><input type="text" class="form-control" data-field="land_type_ldtr"></div><div class="form-group"><label class="form-label">Last Ownership Transfer</label><input type="text" class="form-control" data-field="last_ownership_transfer"></div></div>
@@ -294,7 +296,6 @@
                 <div class="form-row"><div class="form-group"><label class="form-label">No. of Stories (As per Plan)</label><input type="text" class="form-control" data-field="stories_plan"></div><div class="form-group"><label class="form-label">No. of Stories (As per Physical)</label><input type="text" class="form-control" data-field="stories_physical"></div></div>
                 <div class="form-row"><div class="form-group"><label class="form-label">Approval Authority</label><input type="text" class="form-control" data-field="approval_authority"></div><div class="form-group"><label class="form-label">Plan No. (Sarok number)</label><input type="text" class="form-control" data-field="plan_no"></div></div>
                 <div class="form-row"><div class="form-group"><label class="form-label">Plan Date</label><input type="date" class="form-control" data-field="plan_date"></div><div class="form-group"><label class="form-label">Occupancy Category</label><input type="text" class="form-control" data-field="occupancy_category"></div></div>
-                <!-- EBL: Age + construction period -->
                 <div class="form-row-3">
                     <div class="form-group"><label class="form-label">Age of Structure (Years)</label><input type="number" class="form-control" data-field="age_of_structure" id="ebl-age" oninput="eblCalcDepreciation()"></div>
                     <div class="form-group"><label class="form-label">Construction Period – From</label><input type="text" class="form-control" data-field="construction_from" placeholder="e.g. 2010"></div>
@@ -474,8 +475,6 @@
 <script>
 // ═══════════════════════════════════════════════════════════
 //  ebl-land-building-form.html  —  page logic
-//  All functions prefixed ebl to avoid collision if pages are
-//  ever bundled together.
 // ═══════════════════════════════════════════════════════════
 
 function showSection(id, nav) {
@@ -522,7 +521,6 @@ function eblCalcValuation() {
     eblSetF('forced_total',eblFmtN(mT*0.8));
     const zA=eblGetF('mouza_land_area'), zR=eblGetF('mouza_rate'), zB=eblGetF('mouza_build_val');
     eblSetF('mouza_land_val',eblFmtN(zA*zR)); eblSetF('mouza_total',eblFmtN(zA*zR+zB));
-    // Sync to summary sheet
     eblSetF('final_market_value',eblFmtN(mT)); eblSetF('final_forced_value',eblFmtN(mT*0.8));
 }
 
@@ -559,7 +557,6 @@ function eblCalcWorkPct(input) {
     for(let i=0;i<EBL_WEIGHTS.length;i++) total+=(Math.min(parseFloat(ins[i+1].value)||0,100)/100)*EBL_WEIGHTS[i];
     const pct=Math.ceil(total);
     ins[11].value=pct;
-    // Sync to cost table (offset +1 for Foundation row)
     const costRows=document.querySelectorAll('#ebl-cost-body tr');
     const costRow=costRows[row.rowIndex-1+1];
     if(costRow){ const ci=costRow.querySelectorAll('input'); ci[6].value=pct; eblCalcBVRow(costRow); eblCalcBVTotals(); }
@@ -569,7 +566,6 @@ function eblCalcWorkPct(input) {
 function eblCalcBV(input) { eblCalcBVRow(input.closest('tr')); eblCalcBVTotals(); }
 function eblCalcBVRow(row) {
     const ins=row.querySelectorAll('input');
-    // cols: 0=floor 1=a 2=b 3=c 4=d(est plan) 5=e(est phys) 6=f(work%) 7=g 8=h
     const a=parseFloat((ins[1]?.value||'').replace(/,/g,''))||0;
     const b=parseFloat((ins[2]?.value||'').replace(/,/g,''))||0;
     const c=parseFloat((ins[3]?.value||'').replace(/,/g,''))||0;
@@ -630,7 +626,6 @@ function eblAddFloor() {
         `<td><input type="text" readonly></td>`;
     document.getElementById('ebl-comp-body').appendChild(cRow);
     const costRow=document.createElement('tr');
-    // cols: floor, a, b, c, est_plan(ro), est_phys(ro), work%(edit), pres_plan(ro), pres_phys(ro)
     costRow.innerHTML=`<td><input type="text" value="${lbl}" style="min-width:80px;"></td>`+
         ['oninput="eblCalcBV(this)"','oninput="eblCalcBV(this)"','oninput="eblCalcBV(this)"',
          'readonly','readonly','oninput="eblCalcBV(this)"','readonly','readonly']
