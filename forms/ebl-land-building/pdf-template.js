@@ -40,7 +40,7 @@ const EBLLandBuildingPDF = {
             const rh    = Math.max(6, lines.length * 4.5 + 2);
             if (y + rh > CONTENT_BOTTOM) y = E.newPage();
             doc.setDrawColor(0,0,0); doc.setLineWidth(0.2);
-            doc.setFillColor(240,240,240); doc.rect(ML,      y, lw,  rh, 'FD');
+            doc.setFillColor(255,255,255); doc.rect(ML,      y, lw,  rh, 'FD');
             doc.setFillColor(255,255,255); doc.rect(ML+lw,   y, 4,   rh, 'FD');
             doc.rect(ML+lw+4, y, vw, rh, 'FD');
             E.bold(10);   doc.text(String(label), ML+1.5, y+4);
@@ -50,11 +50,11 @@ const EBLLandBuildingPDF = {
             return y + rh;
         };
 
-        // Underlined bold section heading
         const heading = (y, text) => {
             if (y + 8 > CONTENT_BOTTOM) y = E.newPage();
             E.bold(12); doc.text(text, ML, y+5);
-            doc.setLineWidth(0.3); doc.line(ML, y+6.5, ML+CW, y+6.5);
+            const textWidth = doc.getTextWidth(text);
+            doc.setLineWidth(0.3); doc.line(ML, y+6.5, ML+textWidth, y+6.5);
             E.normal(10); return y + 11;
         };
 
@@ -133,43 +133,55 @@ const EBLLandBuildingPDF = {
         const zLand  = zArea * zRate;
         const zTotal = zLand + zBuild;
 
+        
+
         // ══════════════════════════════════════════════════
         //  PAGE 1 – COVER  (Sheet 1)
         //  EBL: NO surveyor table – only Ref + Submitted boxes
         // ══════════════════════════════════════════════════
-        E.bold(15);
-        doc.text('INSPECTION SURVEY & VALUATION REPORT', PW/2, y+5, { align: 'center' });
-        y += 12;
-        E.bold(12);
-        doc.text('Land with Building', PW/2, y+4, { align: 'center' });
-        y += 12;
+        const titleY = 80;
+        E.bold(18);
+        doc.text('INSPECTION SURVEY & VALUATION REPORT', PW/2, titleY, { align:'center' });
 
-        y = kvRow(y, 'Reference Account Name', v('reference_account_name'));
-        y = kvRow(y, 'Reference No.',          v('reference_no'));
-        y += 6;
+        // Reference fields — centered block
+        let ry = titleY + 80;
+        const refLabelW = 52, refColonW = 4;
+        const refStartX = (PW - refLabelW - refColonW - 60) / 2;
+        [
+            ['Reference Account Name', v('reference_account_name')],
+            ['Reference No.',  v('reference_no')],
+        ].forEach(([lbl, val]) => {
+            E.bold(10);
+            doc.text(lbl, refStartX, ry);
+            doc.text(':', refStartX + refLabelW, ry);
+            doc.text(String(val), refStartX + refLabelW + refColonW + 1, ry);
+            ry += 6;
+        });
 
-        // Submitted by / Submitted to boxes
-        const rNameLines = doc.splitTextToSize(v('recipient_name'),    CW/2-14);
-        const addrLines  = doc.splitTextToSize(v('recipient_address'), CW/2-14);
-        const boxH = Math.max(40, 14 + (rNameLines.length + addrLines.length) * 5);
+        // Submitted boxes
+        const boxTop = 220;
+        const rNameLines = doc.splitTextToSize(v('recipient_name'), CW/2-14);
+        const addrL      = doc.splitTextToSize(v('recipient_address'), CW/2-14);
+        const boxH = Math.max(40, 14 + Math.max(6, rNameLines.length + addrL.length) * 5.5);
         doc.setDrawColor(0,0,0); doc.setFillColor(255,255,255);
-        doc.rect(ML,          y, CW/2-2, boxH, 'FD');
-        doc.rect(ML+CW/2+2,   y, CW/2-2, boxH, 'FD');
+        doc.rect(ML, boxTop, CW/2-2, boxH, 'FD');
+        doc.rect(ML+CW/2+2, boxTop, CW/2-2, boxH, 'FD');
 
-        let by = y + 5;
-        E.bold(10); doc.text('Submitted by:', ML+3, by); by += 5.5;
-        E.bold(10); doc.text('AMK Associates Limited', ML+3, by); by += 5;
-        E.normal(9);
-        ['68, Khilgaon Chowdhurypara (4th floor)', 'DIT Road, Rampura, Dhaka-1219',
-         'E-mail: amkassociatesbd@gmail.com', 'Website: www.amkassociatesltd.com',
-         'Contact: +88 01841-132714'
-        ].forEach(l => { doc.text(l, ML+3, by); by += 4.5; });
+        let by = boxTop + 6;
+        E.bold(10);  doc.text('Submitted by:', ML+3, by); by += 6;
+        E.bold(10);  doc.text('AMK Associates Limited', ML+3, by); by += 5.5;
+        E.normal(10);
+        doc.text('68, Khilgaon Chowdhury Para (4th floor)', ML+3, by); by += 5;
+        doc.text('DIT Road Rampura, Dhaka-1219', ML+3, by); by += 5;
+        doc.text('E-mail: www.amkassociatesbd@gmail.com', ML+3, by); by += 5;
+        doc.text('Web: www.amkassociatesbd.com', ML+3, by); by += 5;
+        doc.text('Contact: 01841132714', ML+3, by);
 
         const rx = ML + CW/2 + 5;
-        let ty = y + 5;
-        E.bold(10); doc.text('Submitted to:', rx, ty); ty += 5.5;
-        rNameLines.forEach(l => { E.bold(10); doc.text(l, rx, ty); ty += 5; });
-        E.normal(9); addrLines.forEach(l => { doc.text(l, rx, ty); ty += 4.5; });
+        let ty = boxTop + 6;
+        E.bold(10); doc.text('Submitted to:', rx, ty); ty += 6;
+        rNameLines.forEach(l => { doc.text(l, rx, ty); ty += 5.5; });
+        E.normal(10); addrL.forEach(l => { doc.text(l, rx, ty); ty += 5; });
 
         // ══════════════════════════════════════════════════
         //  PAGE 2 – COVER LETTER  (Sheet 2)
@@ -197,22 +209,96 @@ const EBLLandBuildingPDF = {
         const bodyLines = doc.splitTextToSize(bodyStr, CW);
         doc.text(bodyLines, ML, y); y += bodyLines.length*4.5 + 5;
 
+
         // Valuation table
         const vCws = [42, 26, 30, 26, 28, 26];
         E.italic(9); doc.text('Amount in BDT', ML+CW, y, { align: 'right' }); y += 4;
-        y = tblHeader(y, ['Description','Total Land Area\n(Decimal)','Present Rate per\nDecimal (BDT)',
-                          'Land Value\n(BDT)','Building Value\n(BDT)','Total Value\n(BDT)'], vCws);
-        y = formulaRow(y, ['','a','b','c=a×b','d','e=c+d'], vCws);
-        y = tblRow(y, ['Present Market Value',         mArea||'', fmt(mRate), fmt(mLand), fmt(mBuild), fmt(mTotal)], vCws);
-        y = tblRow(y, ['Forced Sale Value (20% less)',  mArea||'', fmt(fRate), fmt(fLand), fmt(fBuild), fmt(fTotal)], vCws);
-        y = tblRow(y, ['Mouza Value',                   zArea||'', fmt(zRate), fmt(zLand), fmt(zBuild), fmt(zTotal)], vCws);
+
+        // Custom table header with Description spanning 2 rows
+        const hdrH1 = 11, hdrH2 = 5;
+        const totalHdrH = hdrH1 + hdrH2;
+        doc.setDrawColor(0,0,0); doc.setLineWidth(0.2);
+        E.bold(9);
+
+        // Draw full outer border for entire header block
+        doc.rect(ML, y, vCws.reduce((a,b)=>a+b,0), totalHdrH);
+
+        // Draw Description cell — vertical right border only
+        doc.line(ML + vCws[0], y, ML + vCws[0], y + totalHdrH);
+
+        // Draw vertical dividers for remaining columns
+        let hx = ML + vCws[0];
+        for (let i = 1; i < vCws.length - 1; i++) {
+            hx += vCws[i];
+            doc.line(hx, y, hx, y + totalHdrH);
+        }
+
+        // Draw horizontal divider between header labels and formula row
+        // Skip the Description column (starts after vCws[0])
+        doc.line(ML + vCws[0], y + hdrH1, ML + vCws.reduce((a,b)=>a+b,0), y + hdrH1);
+
+        // Draw Description text (vertically centered across full header height)
+        E.bold(9);
+        doc.text('Description', ML + vCws[0]/2, y + totalHdrH/2 + 1.5, { align: 'center' });
+
+        // Draw other header label texts (top row)
+        hx = ML + vCws[0];
+        const hdrLabels = ['Total Land Area\n(Decimal)', 'Present Rate per\nDecimal (BDT)', 'Land Value\n(BDT)', 'Building Value\n(BDT)', 'Total Value\n(BDT)'];
+        for (let i = 0; i < hdrLabels.length; i++) {
+            const ls = doc.splitTextToSize(hdrLabels[i], vCws[i+1] - 1);
+            doc.text(ls, hx + vCws[i+1]/2, y + 3.5, { align: 'center' });
+            hx += vCws[i+1];
+        }
+
+        // Draw formula texts (bottom row)
+        E.italic(8);
+        hx = ML + vCws[0];
+        const formulas = ['a', 'b', 'c=a×b', 'd', 'e=c+d'];
+        for (let i = 0; i < formulas.length; i++) {
+            doc.text(formulas[i], hx + vCws[i+1]/2, y + hdrH1 + 3.5, { align: 'center' });
+            hx += vCws[i+1];
+        }
+        y += totalHdrH;
+
+        // Custom data rows — ensure Description cell height matches full row without overlap
+        const dataRows = [
+            ['Present Market Value',        mArea||'', fmt(mRate), fmt(mLand), fmt(mBuild), fmt(mTotal)],
+            ['Forced Sale Value (20% less)', mArea||'', fmt(fRate), fmt(fLand), fmt(fBuild), fmt(fTotal)],
+            ['Mouza Value',                  zArea||'', fmt(zRate), fmt(zLand), fmt(zBuild), fmt(zTotal)],
+        ];
+
+        dataRows.forEach(cells => {
+            // Calculate required row height based on all cells
+            let rh = 7;
+            cells.forEach((c, i) => {
+                const ls = doc.splitTextToSize(String(c||''), vCws[i] - 2);
+                rh = Math.max(rh, ls.length * 4.5 + 3);
+            });
+
+            if (y + rh > E.CONTENT_BOTTOM) y = E.newPage();
+            doc.setDrawColor(0,0,0); doc.setLineWidth(0.2);
+
+            let dx = ML;
+            cells.forEach((c, i) => {
+                doc.rect(dx, y, vCws[i], rh);
+                const ls = doc.splitTextToSize(String(c||''), vCws[i] - 2);
+                const align = i === 0 ? 'left' : 'center';
+                const tx    = i === 0 ? dx + 2 : dx + vCws[i]/2;
+                if (i === 0) E.bold(9); else E.normal(9);
+                // Vertically center the text within the cell
+                const textY = y + (rh - (ls.length - 1) * 4.5) / 2 + 1;
+                doc.text(ls, tx, textY, { align });
+                dx += vCws[i];
+            });
+            y += rh;
+        });
         y += 5;
 
         E.normal(10);
         const p1L = doc.splitTextToSize('The report has been prepared based on our physical inspection, verification, necessary documents as provided by concern office/individual, local market analysis and assessment to the best of our knowledge.', CW);
         doc.text(p1L, ML, y); y += p1L.length*4.5 + 4;
         doc.text('Detail Report and necessary attachments are enclosed herewith for your record and perusal.', ML, y, { maxWidth: CW }); y += 6;
-        doc.text('For any query, please feel free to contact us.', ML, y); y += 5;
+        doc.text('For any query, please feel free to contact us.', ML, y); y += 6;
         doc.text('With best regards,', ML, y); y += 18;
 
         // Signatures
@@ -241,7 +327,7 @@ const EBLLandBuildingPDF = {
         // ══════════════════════════════════════════════════
         y = E.newPage();
         E.bold(12); doc.text('Summary of the Valuation Report', PW/2, y+5, { align: 'center' });
-        doc.setLineWidth(0.3); doc.line(ML, y+7, ML+CW, y+7);
+        // doc.setLineWidth(0.3); doc.line(ML, y+7, ML+CW, y+7);
         E.normal(10); y += 13;
 
         [['File Receiving Date',     dt('file_receiving_date')],
