@@ -9,14 +9,35 @@
         .admin-hero { background: linear-gradient(135deg, var(--navy) 0%, #1a3a5c 100%); padding: 2rem 2.5rem; margin-bottom: 2rem; border-radius: var(--radius-lg); display: flex; justify-content: space-between; align-items: center; }
         .admin-hero h1 { font-family: var(--font-display); color: var(--gold); font-size: 2rem; margin-bottom: 4px; }
         .admin-hero p { color: var(--gray-400); font-size: 0.9rem; }
-        .table-container { background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--gray-200); overflow: hidden; }
-        .table-toolbar { padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--gray-200); gap: 1rem; flex-wrap: wrap; }
-        .search-box { display: flex; align-items: center; gap: 8px; background: var(--gray-100); border-radius: var(--radius-sm); padding: 0.45rem 1rem; border: 1.5px solid transparent; transition: all var(--transition); min-width: 240px; }
+
+        /* Table section */
+        .submissions-table-wrapper { background: var(--white); border-radius: var(--radius-lg); border: 1px solid var(--gray-200); overflow: hidden; margin-bottom: 2rem; }
+        .table-section-header { padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--gray-200); gap: 1rem; flex-wrap: wrap; }
+        .table-section-title { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--navy); display: flex; align-items: center; gap: 8px; }
+        .table-section-count { font-size: 0.75rem; font-weight: 600; background: var(--gray-100); color: var(--gray-600); padding: 2px 10px; border-radius: 999px; }
+
+        .search-box { display: flex; align-items: center; gap: 8px; background: var(--gray-100); border-radius: var(--radius-sm); padding: 0.45rem 1rem; border: 1.5px solid transparent; transition: all var(--transition); min-width: 220px; }
         .search-box:focus-within { background: var(--white); border-color: var(--gold); }
         .search-box input { border: none; background: transparent; outline: none; font-family: var(--font-body); font-size: 0.875rem; color: var(--navy); width: 100%; }
         .search-box input::placeholder { color: var(--gray-400); }
-        .admin-table { overflow-x: auto; }
-        .empty-table { text-align: center; padding: 3rem; color: var(--gray-400); }
+
+        .submissions-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        .submissions-table th { padding: 0.65rem 1rem; background: var(--navy); color: var(--gold); font-weight: 600; text-align: left; white-space: nowrap; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+        .submissions-table td { padding: 0.7rem 1rem; border-bottom: 1px solid var(--gray-200); color: var(--gray-800); vertical-align: middle; }
+        .submissions-table tr:last-child td { border-bottom: none; }
+        .submissions-table tr:hover td { background: var(--gray-100); }
+        .action-buttons { display: flex; gap: 6px; flex-wrap: wrap; }
+        .empty-table { text-align: center; padding: 2.5rem; color: var(--gray-400); font-size: 0.875rem; }
+
+        .user-cell { display: flex; align-items: center; gap: 10px; }
+        .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--navy-mid); color: var(--gold); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
+        .user-name  { font-weight: 500; color: var(--navy); font-size: 0.85rem; }
+        .user-email { font-size: 0.75rem; color: var(--gray-400); }
+
+        /* Section filter tabs */
+        .section-filter-tabs { display: flex; gap: 4px; }
+        .section-filter-tab { padding: 4px 12px; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 500; cursor: pointer; border: 1px solid var(--gray-200); background: transparent; color: var(--gray-600); transition: all var(--transition); font-family: var(--font-body); }
+        .section-filter-tab.active { background: var(--navy); color: var(--gold); border-color: var(--navy); }
     </style>
 </head>
 <body>
@@ -50,22 +71,63 @@
         <div class="stat-card"><div class="stat-label">Drafts</div><div class="stat-value" id="stat-draft" style="color:var(--gold)">--</div></div>
     </div>
 
-    <div class="table-container">
-        <div class="table-toolbar">
-            <div class="filter-tabs" style="margin-bottom:0;">
-                <button class="filter-tab active" onclick="Admin.filter('all', this)">All</button>
-                <button class="filter-tab" onclick="Admin.filter('submitted', this)">Submitted</button>
-                <button class="filter-tab" onclick="Admin.filter('reviewed', this)">Reviewed</button>
-                <button class="filter-tab" onclick="Admin.filter('draft', this)">Drafts</button>
+    <!-- Global Search -->
+    <div style="margin-bottom:1.5rem;">
+        <div class="search-box" style="max-width:400px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="search-input" placeholder="Search by letter ref, account name, email..." oninput="Admin.search(this.value)">
+        </div>
+    </div>
+
+    <!-- Vehicle Valuation Section -->
+    <div class="submissions-table-wrapper">
+        <div class="table-section-header">
+            <div class="table-section-title">
+                🚗 BBPLC Vehicle Valuation
+                <span class="table-section-count" id="count-vehicle">0</span>
             </div>
-            <div class="search-box">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="text" id="search-input" placeholder="Search by letter ref, account name, email..." oninput="Admin.search(this.value)">
+            <div class="section-filter-tabs">
+                <button class="section-filter-tab active" onclick="Admin.filterSection('vehicle','all',this)">All</button>
+                <button class="section-filter-tab" onclick="Admin.filterSection('vehicle','submitted',this)">Submitted</button>
+                <button class="section-filter-tab" onclick="Admin.filterSection('vehicle','reviewed',this)">Reviewed</button>
+                <button class="section-filter-tab" onclick="Admin.filterSection('vehicle','draft',this)">Drafts</button>
             </div>
         </div>
-        <div class="admin-table" id="admin-submissions-list">
-            <div class="loading-spinner"></div>
+        <div id="table-vehicle"><div class="empty-table"><div class="loading-spinner"></div></div></div>
+    </div>
+
+    <!-- EBL SME Property Valuation Section -->
+    <div class="submissions-table-wrapper">
+        <div class="table-section-header">
+            <div class="table-section-title">
+                🏠 EBL SME Land &amp; Building
+                <span class="table-section-count" id="count-property">0</span>
+            </div>
+            <div class="section-filter-tabs">
+                <button class="section-filter-tab active" onclick="Admin.filterSection('property','all',this)">All</button>
+                <button class="section-filter-tab" onclick="Admin.filterSection('property','submitted',this)">Submitted</button>
+                <button class="section-filter-tab" onclick="Admin.filterSection('property','reviewed',this)">Reviewed</button>
+                <button class="section-filter-tab" onclick="Admin.filterSection('property','draft',this)">Drafts</button>
+            </div>
         </div>
+        <div id="table-property"><div class="empty-table"><div class="loading-spinner"></div></div></div>
+    </div>
+
+    <!-- EBL Land & Building Section -->
+    <div class="submissions-table-wrapper">
+        <div class="table-section-header">
+            <div class="table-section-title">
+                🏗️ EBL Land &amp; Building
+                <span class="table-section-count" id="count-ebl">0</span>
+            </div>
+            <div class="section-filter-tabs">
+                <button class="section-filter-tab active" onclick="Admin.filterSection('ebl','all',this)">All</button>
+                <button class="section-filter-tab" onclick="Admin.filterSection('ebl','submitted',this)">Submitted</button>
+                <button class="section-filter-tab" onclick="Admin.filterSection('ebl','reviewed',this)">Reviewed</button>
+                <button class="section-filter-tab" onclick="Admin.filterSection('ebl','draft',this)">Drafts</button>
+            </div>
+        </div>
+        <div id="table-ebl"><div class="empty-table"><div class="loading-spinner"></div></div></div>
     </div>
 
 </div>
@@ -74,8 +136,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-<!-- Shared modules — to change PDF edit pdf-template.js, to change auth edit auth.js -->
 <script src="config.js"></script>
 <script src="auth.js"></script>
 <script src="ui.js"></script>
@@ -86,15 +146,18 @@
 <script src="forms/ebl-land-building/pdf-template.js"></script>
 
 <script>
-// ═══════════════════════════════════════════════════════════
-//  admin.html  —  page-specific logic only
-//  To change PDF layout  → forms/vehicle-valuation/pdf-template.js
-//  To change auth        → auth.js
-//  To change DB queries  → core/db.js
-// ═══════════════════════════════════════════════════════════
 const Admin = {
     allData: [],
-    currentFilter: 'all',
+    sectionFilters: { vehicle: 'all', property: 'all', ebl: 'all' },
+    searchQuery: '',
+
+    getFormType(sub) {
+        const fd = sub.form_data || {};
+        const type = fd._formType || sub.form_type || 'vehicle-valuation';
+        if (type === 'ebl-land-building') return 'ebl';
+        if (type === 'property-valuation') return 'property';
+        return 'vehicle';
+    },
 
     async init() {
         const auth = await Auth.requireAdmin();
@@ -119,16 +182,13 @@ const Admin = {
     },
 
     async loadAllSubmissions() {
-        const container = document.getElementById('admin-submissions-list');
-        container.innerHTML = '<div class="loading-spinner"></div>';
+        ['table-vehicle','table-property','table-ebl'].forEach(id => {
+            document.getElementById(id).innerHTML = '<div class="empty-table"><div class="loading-spinner"></div></div>';
+        });
         try {
-            // 1. Fetch submissions
-            let query = db.from('submissions').select('*').order('updated_at', { ascending: false });
-            if (this.currentFilter !== 'all') query = query.eq('status', this.currentFilter);
-            const { data, error } = await query;
+            const { data, error } = await db.from('submissions').select('*').order('updated_at', { ascending: false });
             if (error) throw error;
 
-            // 2. Fetch profiles for all unique user_ids
             const userIds = [...new Set(data.map(s => s.user_id).filter(Boolean))];
             let profileMap = {};
             if (userIds.length > 0) {
@@ -136,97 +196,142 @@ const Admin = {
                 if (profiles) profiles.forEach(p => { profileMap[p.id] = p; });
             }
 
-            // 3. Attach profile to each submission
-            const enriched = data.map(s => ({ ...s, _profile: profileMap[s.user_id] || null }));
-            this.allData = enriched;
-            this.render(enriched);
+            this.allData = data.map(s => ({ ...s, _profile: profileMap[s.user_id] || null }));
+            this.renderAllSections();
         } catch(err) {
-            container.innerHTML = `<div class="error-msg" style="margin:1rem;">Error: ${err.message}</div>`;
+            ['table-vehicle','table-property','table-ebl'].forEach(id => {
+                document.getElementById(id).innerHTML = `<div class="empty-table" style="color:var(--danger);">Error: ${err.message}</div>`;
+            });
         }
     },
 
-    filter(f, btn) {
-        this.currentFilter = f;
-        document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+    filterSection(section, status, btn) {
+        this.sectionFilters[section] = status;
+        const parent = btn.closest('.section-filter-tabs');
+        parent.querySelectorAll('.section-filter-tab').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        document.getElementById('search-input').value = '';
-        this.loadAllSubmissions();
+        this.renderSection(section);
     },
 
     search(query) {
-        const q = query.toLowerCase();
-        const filtered = this.allData.filter(sub => {
-            const fd = sub.form_data || {};
-            const searchStr = [
-                fd.letter_ref,
-                fd.reference_account_name,
-                fd.file_reference_number,
-                sub._profile?.email,
-                sub._profile?.full_name
-            ].join(' ').toLowerCase();
-            return searchStr.includes(q);
-        });
-        this.render(filtered);
+        this.searchQuery = query.toLowerCase();
+        this.renderAllSections();
     },
 
-    render(list) {
-        const container = document.getElementById('admin-submissions-list');
+    applySearch(list) {
+        if (!this.searchQuery) return list;
+        const q = this.searchQuery;
+        return list.filter(sub => {
+            const fd = sub.form_data || {};
+            const s = [
+                fd.letter_ref, fd.reference_account_name,
+                fd.file_reference_number, fd.reference_no,
+                sub._profile?.email, sub._profile?.full_name
+            ].join(' ').toLowerCase();
+            return s.includes(q);
+        });
+    },
+
+    renderAllSections() {
+        this.renderSection('vehicle');
+        this.renderSection('property');
+        this.renderSection('ebl');
+    },
+
+    renderSection(section) {
+        const grouped = { vehicle: [], property: [], ebl: [] };
+        this.allData.forEach(sub => { grouped[this.getFormType(sub)].push(sub); });
+
+        document.getElementById('count-vehicle').textContent  = grouped.vehicle.length;
+        document.getElementById('count-property').textContent = grouped.property.length;
+        document.getElementById('count-ebl').textContent      = grouped.ebl.length;
+
+        const statusFilter = this.sectionFilters[section];
+        let list = grouped[section];
+        if (statusFilter !== 'all') list = list.filter(s => s.status === statusFilter);
+        list = this.applySearch(list);
+
+        const container = document.getElementById('table-' + section);
         if (list.length === 0) {
-            container.innerHTML = '<div class="empty-table"><p>No submissions found.</p></div>';
+            container.innerHTML = `<div class="empty-table">No reports found.</div>`;
             return;
         }
+
+        const isVehicle = section === 'vehicle';
+        const isEBL     = section === 'ebl';
+        const formUrl   = isEBL ? 'ebl-land-building-form.html' : isVehicle ? 'form.html' : 'property-form.html';
+
+        const rows = list.map(sub => {
+            const fd     = sub.form_data || {};
+            const name   = sub._profile?.full_name || sub._profile?.email || 'Unknown';
+            const email  = sub._profile?.email || '—';
+            const date   = new Date(sub.updated_at).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+            const sc     = { draft:'status-draft', submitted:'status-submitted', reviewed:'status-reviewed' }[sub.status] || '';
+            const sl     = sub.status.charAt(0).toUpperCase() + sub.status.slice(1);
+
+            let fileRef, refNo, accountName;
+            if (isVehicle) {
+                fileRef     = fd.file_reference_number || fd.letter_ref || '—';
+                refNo       = fd.letter_ref || '—';
+                accountName = fd.reference_account_name || fd.referred_by || '—';
+            } else {
+                fileRef     = fd.property_location || fd.valuation_ref_no || (isEBL ? 'EBL Land & Building' : 'Property Report');
+                refNo       = fd.reference_no || fd.valuation_ref_no || '—';
+                accountName = fd.reference_account_name || '—';
+            }
+
+            const reviewedBtn = sub.status !== 'reviewed'
+                ? `<button class="btn btn-sm btn-success" onclick="Admin.markReviewed('${sub.id}', this)">Reviewed</button>`
+                : '';
+
+            return `<tr>
+                <td>
+                    <div class="user-cell">
+                        <div class="user-avatar">${(name||'?')[0].toUpperCase()}</div>
+                        <div>
+                            <div class="user-name">${name}</div>
+                            <div class="user-email">${email}</div>
+                        </div>
+                    </div>
+                </td>
+                <td style="font-weight:500;">${fileRef}</td>
+                <td>${refNo}</td>
+                <td>${accountName}</td>
+                <td><span class="status-badge ${sc}">${sl}</span></td>
+                <td>${date}</td>
+                <td>
+                    <div class="action-buttons">
+                        <a href="${formUrl}?id=${sub.id}&admin=true" class="btn btn-sm btn-outline">Edit</a>
+                        <button class="btn btn-sm btn-primary" onclick="Admin.downloadReport('${sub.id}','${section}')">PDF</button>
+                        ${reviewedBtn}
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+
+        const colLabel = isVehicle ? 'File Ref.' : 'Report';
+        const col2     = isVehicle ? 'Letter Ref.' : 'Reference No.';
+        const col3     = isVehicle ? 'Referred By' : 'Account Name';
+
         container.innerHTML = `
-            <table class="admin-table" style="margin:0;">
+            <table class="submissions-table">
                 <thead>
                     <tr>
                         <th>User</th>
-                        <th>Letter Reference</th>
-                        <th>Reference Account Name</th>
+                        <th>${colLabel}</th>
+                        <th>${col2}</th>
+                        <th>${col3}</th>
                         <th>Status</th>
                         <th>Last Updated</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
-                <tbody>
-                    ${list.map(sub => {
-                        const fd         = sub.form_data || {};
-                        const letterRef  = fd.letter_ref || '--';
-                        const refAccount = fd.reference_account_name || '--';
-                        const email      = sub._profile?.email || '--';
-                        const name       = sub._profile?.full_name || sub._profile?.email || 'Unknown';
-                        const date       = new Date(sub.updated_at).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
-                        const sClass     = {draft:'status-draft',submitted:'status-submitted',reviewed:'status-reviewed'}[sub.status] || '';
-                        const sLabel     = sub.status.charAt(0).toUpperCase() + sub.status.slice(1);
-                        return `<tr>
-                            <td>
-                                <div class="user-cell">
-                                    <div class="user-avatar">${(name||'?')[0].toUpperCase()}</div>
-                                    <div>
-                                        <div class="user-name">${name}</div>
-                                        <div class="user-email">${email}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>${letterRef}</td>
-                            <td>${refAccount}</td>
-                            <td><span class="status-badge ${sClass}">${sLabel}</span></td>
-                            <td>${date}</td>
-                            <td>
-                                <div class="action-buttons">
-                                    <a href="form.html?id=${sub.id}&admin=true" class="btn btn-sm btn-outline">Edit</a>
-                                    <button class="btn btn-sm btn-primary" onclick="Admin.downloadReport('${sub.id}')">PDF</button>
-                                    ${sub.status !== 'reviewed' ? `<button class="btn btn-sm btn-success" onclick="Admin.markReviewed('${sub.id}', this)">Reviewed</button>` : ''}
-                                </div>
-                            </td>
-                        </tr>`;
-                    }).join('')}
-                </tbody>
+                <tbody>${rows}</tbody>
             </table>`;
     },
 
     async markReviewed(id, btn) {
-        btn.disabled = true;
-        btn.textContent = '...';
+        btn.disabled = true; btn.textContent = '...';
         try {
             const { error } = await db.from('submissions').update({ status: 'reviewed' }).eq('id', id);
             if (error) throw error;
@@ -235,12 +340,11 @@ const Admin = {
             await this.loadAllSubmissions();
         } catch(err) {
             UI.showToast('Error: ' + err.message, 'error');
-            btn.disabled = false;
-            btn.textContent = 'Reviewed';
+            btn.disabled = false; btn.textContent = 'Reviewed';
         }
     },
 
-    async downloadReport(submissionId) {
+    async downloadReport(submissionId, section) {
         try {
             const sub = this.allData.find(s => s.id === submissionId);
             let formData = sub ? sub.form_data : null;
@@ -248,10 +352,9 @@ const Admin = {
                 const { data } = await db.from('submissions').select('*').eq('id', submissionId).single();
                 formData = data?.form_data;
             }
-            const type = formData?._formType || sub?.form_type || 'vehicle-valuation';
-            if (type === 'property-valuation') {
+            if (section === 'property') {
                 await PDFEngine.generate(formData, PropertyValuationPDF);
-            } else if (type === 'ebl-land-building') {
+            } else if (section === 'ebl') {
                 await PDFEngine.generate(formData, EBLLandBuildingPDF);
             } else {
                 await PDFEngine.generate(formData, VehicleValuationPDF);
