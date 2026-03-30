@@ -58,17 +58,28 @@ const EBLLandBuildingPDF = {
             E.normal(10); return y + 11;
         };
 
-        // Table header row
+        // Table header row — FIX: measure actual multi-line height before drawing
         const tblHeader = (y, cols, cws) => {
-            if (y + 7 > CONTENT_BOTTOM) y = E.newPage();
-            let x = ML;
-            E.bold(9); doc.setDrawColor(0,0,0); doc.setLineWidth(0.2);
+            // Calculate the required header height based on wrapped text in each cell
+            let hdrH = 7;
+            E.bold(9);
             cols.forEach((c, i) => {
-                doc.rect(x, y, cws[i], 7);
-                doc.text(doc.splitTextToSize(c, cws[i]-1), x + cws[i]/2, y+3.5, { align: 'center' });
+                const ls = doc.splitTextToSize(c, cws[i] - 2);
+                hdrH = Math.max(hdrH, ls.length * 4.5 + 3);
+            });
+            if (y + hdrH > CONTENT_BOTTOM) y = E.newPage();
+            let x = ML;
+            doc.setDrawColor(0,0,0); doc.setLineWidth(0.2);
+            cols.forEach((c, i) => {
+                doc.rect(x, y, cws[i], hdrH);
+                const ls = doc.splitTextToSize(c, cws[i] - 2);
+                // Vertically center multi-line text within the header cell
+                const totalTextH = (ls.length - 1) * 4.5;
+                const textStartY = y + (hdrH - totalTextH) / 2 + 1;
+                doc.text(ls, x + cws[i] / 2, textStartY, { align: 'center' });
                 x += cws[i];
             });
-            return y + 7;
+            return y + hdrH;
         };
 
         // Table data row
@@ -326,8 +337,13 @@ const EBLLandBuildingPDF = {
         //  PAGE 3 – SUMMARY  (Sheet 3)
         // ══════════════════════════════════════════════════
         y = E.newPage();
-        E.bold(12); doc.text('Summary of the Valuation Report', PW/2, y+5, { align: 'center' });
-        // doc.setLineWidth(0.3); doc.line(ML, y+7, ML+CW, y+7);
+        // FIX 1: Add underline under "Summary of the Valuation Report"
+        const summaryTitle = 'Summary of the Valuation Report';
+        E.bold(12);
+        doc.text(summaryTitle, PW/2, y+5, { align: 'center' });
+        const summaryTitleW = doc.getTextWidth(summaryTitle);
+        doc.setLineWidth(0.4);
+        doc.line(PW/2 - summaryTitleW/2, y+7, PW/2 + summaryTitleW/2, y+7);
         E.normal(10); y += 13;
 
         [['File Receiving Date',     dt('file_receiving_date')],
@@ -378,6 +394,8 @@ const EBLLandBuildingPDF = {
         // ══════════════════════════════════════════════════
         y = E.newPage();
         y = heading(y, 'C. Schedule of Property:');
+        // FIX 2: Increased lw from 55 to 62 so long labels like "Way to visit Property"
+        // don't overflow. Value column shrinks accordingly but still wraps properly.
         [['District',               v('district')],
          ['Thana / Upazila',        v('thana_upazila')],
          ['Mouza',                  v('mouza')],
@@ -398,7 +416,7 @@ const EBLLandBuildingPDF = {
          ['Total Area as per Deed',          v('total_area_deed')],
          ['Total Area Physically found',     v('total_area_physical')],
          ['Way to visit Property',           v('way_to_visit')],
-        ].forEach(([l, val]) => { y = kvRow(y, l, val, 55); });
+        ].forEach(([l, val]) => { y = kvRow(y, l, val, 62); });
 
         y += 4;
         y = heading(y, 'D. Property Identification:');
@@ -477,7 +495,7 @@ const EBLLandBuildingPDF = {
         // ══════════════════════════════════════════════════
         y = E.newPage();
 
-        // Floor Area table
+        // FIX 3a: Floor Area table — tblHeader now auto-sizes height, no overflow
         const aCws = [32, 37, 37, 36, 36];
         y = tblHeader(y, ['Floor','Area as per Plan\n(Sft.)','Area as per Physical\n(Sft.)','Deviation\n(Sft.)','Deviation\n(%)'], aCws);
         const areaRows = Array.isArray(fd._floor_area_rows) && fd._floor_area_rows.length
@@ -488,7 +506,7 @@ const EBLLandBuildingPDF = {
         });
         y += 5;
 
-        // Floor Unit table
+        // FIX 3b: Floor Unit table — tblHeader now auto-sizes height, no overflow
         const uCws = [22,18,18,16,18,16,18,18,14];
         y = tblHeader(y, ['Floor','Unit/Floor\n(Plan)','Unit/Floor\n(Phys)','Rooms','Bathrooms','Balcony',
                           'Drawing\nRoom','Dining\nRoom','Drawing\nCum Dining'], uCws);
@@ -520,7 +538,7 @@ const EBLLandBuildingPDF = {
         // ══════════════════════════════════════════════════
         y = E.newPage();
 
-        // H. Construction %
+        // FIX 3c: H. Construction % — tblHeader now auto-sizes height, no overflow
         y = heading(y, 'H. Construction Percentage:');
         const hCws = [20,14,14,14,13,16,16,14,14,14,13,16];
         y = tblHeader(y, ['Floor','Structure','Brick','Wood','Metal','Plumbing\n& Sanitary',
@@ -535,7 +553,7 @@ const EBLLandBuildingPDF = {
         });
         y += 5;
 
-        // I. Floor-wise Building Value
+        // FIX 3d: I. Floor-wise Building Value — tblHeader now auto-sizes height, no overflow
         y = heading(y, 'I. Floor-wise Building Value:');
         const iCws = [20,18,18,22,20,20,18,22,20];
         y = tblHeader(y, ['Floor','Area Plan\n(Sft.)','Area Phys.\n(Sft.)','Cost/Sft\n(BDT)',
