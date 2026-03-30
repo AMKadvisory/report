@@ -42,6 +42,9 @@
         .floor-table input { width:100%; border:none; background:transparent; text-align:center; font-family:var(--font-body); font-size:0.82rem; outline:none; padding:2px; }
         .floor-table input:focus { background:rgba(201,168,76,0.08); border-radius:3px; }
         .floor-table td:first-child input { text-align:left; }
+        /* Auto-calculated cells get a subtle tint so users know they were auto-filled */
+        .floor-table input.auto-calc { color:var(--gray-500); font-style:italic; }
+        .floor-table input.manual-val { color:inherit; font-style:normal; }
         .address-box { border:1px solid var(--gray-200); border-radius:var(--radius-sm); padding:1rem; background:var(--gray-100); }
         .address-box h3 { font-family:var(--font-display); font-size:1rem; color:var(--navy); margin-bottom:0.5rem; }
         .address-box p { font-size:0.85rem; color:var(--gray-600); line-height:1.6; }
@@ -383,6 +386,10 @@
             </div>
             <div class="section-card">
                 <div class="section-heading">💰 I. Floor-wise Building Value</div>
+                <p style="font-size:0.8rem;color:var(--gray-500);margin-bottom:1rem;">
+                    💡 Calculated cells (Est. Value &amp; Present Value) auto-fill when you enter area, cost, and work %.
+                    You can override any cell by typing directly. Blank cells are filled with <strong>–</strong> on save.
+                </p>
                 <div class="floor-table-wrapper">
                     <table class="floor-table" id="ebl-tbl-cost">
                         <thead>
@@ -390,8 +397,34 @@
                             <tr><th>Plan (a)</th><th>Phys (b)</th><th>Plan d=a×c</th><th>Phys e=b×c</th><th>Plan g=d×f</th><th>Phys h=e×f</th></tr>
                         </thead>
                         <tbody id="ebl-cost-body">
-                            <tr><td><input type="text" value="Foundation" style="min-width:80px;"></td><td><input type="text" oninput="eblCalcBV(this)"></td><td><input type="text" oninput="eblCalcBV(this)"></td><td><input type="text" oninput="eblCalcBV(this)"></td><td><input type="text" readonly></td><td><input type="text" readonly></td><td><input type="text" oninput="eblCalcBV(this)"></td><td><input type="text" readonly></td><td><input type="text" readonly></td></tr>
-                            <tr><td><input type="text" value="Ground Fl." style="min-width:80px;"></td><td><input type="text" oninput="eblCalcBV(this)"></td><td><input type="text" oninput="eblCalcBV(this)"></td><td><input type="text" oninput="eblCalcBV(this)"></td><td><input type="text" readonly></td><td><input type="text" readonly></td><td><input type="text" oninput="eblCalcBV(this)"></td><td><input type="text" readonly></td><td><input type="text" readonly></td></tr>
+                            <!--
+                                FOUNDATION ROW — all cells are now fully editable.
+                                Calculated columns (est plan, est phys, present plan, present phys)
+                                auto-fill only when the cell is empty; manual values are preserved.
+                                On blur, empty cells are filled with a hyphen "–".
+                            -->
+                            <tr>
+                                <td><input type="text" value="Foundation" style="min-width:80px;" oninput="eblBVMarkManual(this)" onblur="eblBVFillHyphen(this)"></td>
+                                <td><input type="text" oninput="eblCalcBV(this)" onblur="eblBVFillHyphen(this)"></td>
+                                <td><input type="text" oninput="eblCalcBV(this)" onblur="eblBVFillHyphen(this)"></td>
+                                <td><input type="text" oninput="eblCalcBV(this)" onblur="eblBVFillHyphen(this)"></td>
+                                <td><input type="text" oninput="eblBVMarkManual(this)" onblur="eblBVFillHyphen(this)"></td>
+                                <td><input type="text" oninput="eblBVMarkManual(this)" onblur="eblBVFillHyphen(this)"></td>
+                                <td><input type="text" oninput="eblCalcBV(this)" onblur="eblBVFillHyphen(this)"></td>
+                                <td><input type="text" oninput="eblBVMarkManual(this)" onblur="eblBVFillHyphen(this)"></td>
+                                <td><input type="text" oninput="eblBVMarkManual(this)" onblur="eblBVFillHyphen(this)"></td>
+                            </tr>
+                            <tr>
+                                <td><input type="text" value="Ground Fl." style="min-width:80px;" oninput="eblBVMarkManual(this)" onblur="eblBVFillHyphen(this)"></td>
+                                <td><input type="text" oninput="eblCalcBV(this)" onblur="eblBVFillHyphen(this)"></td>
+                                <td><input type="text" oninput="eblCalcBV(this)" onblur="eblBVFillHyphen(this)"></td>
+                                <td><input type="text" oninput="eblCalcBV(this)" onblur="eblBVFillHyphen(this)"></td>
+                                <td><input type="text" oninput="eblBVMarkManual(this)" onblur="eblBVFillHyphen(this)"></td>
+                                <td><input type="text" oninput="eblBVMarkManual(this)" onblur="eblBVFillHyphen(this)"></td>
+                                <td><input type="text" oninput="eblCalcBV(this)" onblur="eblBVFillHyphen(this)"></td>
+                                <td><input type="text" oninput="eblBVMarkManual(this)" onblur="eblBVFillHyphen(this)"></td>
+                                <td><input type="text" oninput="eblBVMarkManual(this)" onblur="eblBVFillHyphen(this)"></td>
+                            </tr>
                         </tbody>
                         <tfoot>
                             <tr style="background:var(--gray-100);font-weight:600;"><td colspan="4">Total Value of Building</td><td><input type="text" id="ebl-tot-plan" readonly></td><td><input type="text" id="ebl-tot-phys" readonly></td><td></td><td><input type="text" id="ebl-pres-plan" readonly></td><td><input type="text" id="ebl-pres-phys" readonly></td></tr>
@@ -559,31 +592,97 @@ function eblCalcWorkPct(input) {
     ins[11].value=pct;
     const costRows=document.querySelectorAll('#ebl-cost-body tr');
     const costRow=costRows[row.rowIndex-1+1];
-    if(costRow){ const ci=costRow.querySelectorAll('input'); ci[6].value=pct; eblCalcBVRow(costRow); eblCalcBVTotals(); }
+    if(costRow){
+        const ci=costRow.querySelectorAll('input');
+        // Only update work% cell if it hasn't been manually overridden
+        if(!ci[6].dataset.manual) { ci[6].value=pct; }
+        eblCalcBVRow(costRow);
+        eblCalcBVTotals();
+    }
 }
 
-// ── Building value ────────────────────────────────────────
-function eblCalcBV(input) { eblCalcBVRow(input.closest('tr')); eblCalcBVTotals(); }
-function eblCalcBVRow(row) {
-    const ins=row.querySelectorAll('input');
-    const a=parseFloat((ins[1]?.value||'').replace(/,/g,''))||0;
-    const b=parseFloat((ins[2]?.value||'').replace(/,/g,''))||0;
-    const c=parseFloat((ins[3]?.value||'').replace(/,/g,''))||0;
-    const f=(parseFloat(ins[6]?.value)||0)/100;
-    if(ins[4]) ins[4].value=eblFmtN(a*c);
-    if(ins[5]) ins[5].value=eblFmtN(b*c);
-    if(ins[7]) ins[7].value=eblFmtN(a*c*f);
-    if(ins[8]) ins[8].value=eblFmtN(b*c*f);
+// ── Building Value helpers ────────────────────────────────
+
+/**
+ * Mark a calculated cell as manually entered so auto-calc won't overwrite it.
+ * Called via oninput on the "calculated" cells (est plan/phys, present plan/phys).
+ */
+function eblBVMarkManual(input) {
+    if (input.value.trim() !== '' && input.value.trim() !== '–') {
+        input.dataset.manual = '1';
+    } else {
+        delete input.dataset.manual;
+    }
+    eblCalcBVTotals();
+    setSaveStatus('unsaved');
 }
+
+/**
+ * Fill a cell with "–" on blur if it is empty or whitespace.
+ */
+function eblBVFillHyphen(input) {
+    if (input.value.trim() === '') {
+        input.value = '–';
+        delete input.dataset.manual; // hyphen is not a manual numeric value
+    }
+}
+
+/**
+ * Attach hyphen-on-blur to every input in a cost row.
+ */
+function eblBVAttachBlur(row) {
+    row.querySelectorAll('input').forEach(inp => {
+        if (!inp.onblur) inp.onblur = () => eblBVFillHyphen(inp);
+    });
+}
+
+function eblCalcBV(input) { eblCalcBVRow(input.closest('tr')); eblCalcBVTotals(); }
+
+/**
+ * Recalculate a cost row.
+ * For cells [4],[5],[7],[8] (the formula cells), only auto-fill if:
+ *   - the cell has NOT been manually overridden (no data-manual attribute), AND
+ *   - the computed value is non-zero (i.e. we have enough inputs to derive it)
+ */
+function eblCalcBVRow(row) {
+    const ins = row.querySelectorAll('input');
+    const a = parseFloat((ins[1]?.value||'').replace(/,/g,'').replace('–','')) || 0;
+    const b = parseFloat((ins[2]?.value||'').replace(/,/g,'').replace('–','')) || 0;
+    const c = parseFloat((ins[3]?.value||'').replace(/,/g,'').replace('–','')) || 0;
+    const f = (parseFloat((ins[6]?.value||'').replace('–','')) || 0) / 100;
+
+    // Est. Value Plan (d = a × c)
+    if (ins[4] && !ins[4].dataset.manual) {
+        const d = a * c;
+        ins[4].value = (a && c) ? eblFmtN(d) : '';
+    }
+    // Est. Value Phys (e = b × c)
+    if (ins[5] && !ins[5].dataset.manual) {
+        const e = b * c;
+        ins[5].value = (b && c) ? eblFmtN(e) : '';
+    }
+    // Present Plan (g = d × f)
+    if (ins[7] && !ins[7].dataset.manual) {
+        const d = parseFloat((ins[4]?.value||'').replace(/,/g,'').replace('–','')) || (a * c);
+        ins[7].value = (d && f) ? eblFmtN(d * f) : '';
+    }
+    // Present Phys (h = e × f)
+    if (ins[8] && !ins[8].dataset.manual) {
+        const e = parseFloat((ins[5]?.value||'').replace(/,/g,'').replace('–','')) || (b * c);
+        ins[8].value = (e && f) ? eblFmtN(e * f) : '';
+    }
+}
+
 function eblCalcBVTotals() {
     let tD=0,tE=0,tG=0,tH=0;
     document.querySelectorAll('#ebl-cost-body tr').forEach(row => {
-        const ins=row.querySelectorAll('input');
-        const a=parseFloat((ins[1]?.value||'').replace(/,/g,''))||0;
-        const b=parseFloat((ins[2]?.value||'').replace(/,/g,''))||0;
-        const c=parseFloat((ins[3]?.value||'').replace(/,/g,''))||0;
-        const f=(parseFloat(ins[6]?.value)||0)/100;
-        tD+=a*c; tE+=b*c; tG+=a*c*f; tH+=b*c*f;
+        const ins = row.querySelectorAll('input');
+        // Use displayed values from cells 4,5,7,8 (which may be manual or auto)
+        const d = parseFloat((ins[4]?.value||'').replace(/,/g,'').replace('–','')) || 0;
+        const e = parseFloat((ins[5]?.value||'').replace(/,/g,'').replace('–','')) || 0;
+        const g = parseFloat((ins[7]?.value||'').replace(/,/g,'').replace('–','')) || 0;
+        const h = parseFloat((ins[8]?.value||'').replace(/,/g,'').replace('–','')) || 0;
+        tD+=d; tE+=e; tG+=g; tH+=h;
     });
     const depPct=parseFloat(document.getElementById('ebl-dep-pct').textContent)||0;
     const dG=tG*depPct/100, dH=tH*depPct/100;
@@ -625,11 +724,19 @@ function eblAddFloor() {
         [...Array(10)].map(()=>`<td><input type="number" min="0" max="100" oninput="eblCalcWorkPct(this)"></td>`).join('')+
         `<td><input type="text" readonly></td>`;
     document.getElementById('ebl-comp-body').appendChild(cRow);
+
+    // Cost row — all cells editable, calculated cells use manual-override logic
     const costRow=document.createElement('tr');
-    costRow.innerHTML=`<td><input type="text" value="${lbl}" style="min-width:80px;"></td>`+
-        ['oninput="eblCalcBV(this)"','oninput="eblCalcBV(this)"','oninput="eblCalcBV(this)"',
-         'readonly','readonly','oninput="eblCalcBV(this)"','readonly','readonly']
-        .map(a=>`<td><input type="text" ${a}></td>`).join('');
+    costRow.innerHTML=
+        `<td><input type="text" value="${lbl}" style="min-width:80px;" oninput="eblBVMarkManual(this)" onblur="eblBVFillHyphen(this)"></td>`+
+        `<td><input type="text" oninput="eblCalcBV(this)" onblur="eblBVFillHyphen(this)"></td>`+
+        `<td><input type="text" oninput="eblCalcBV(this)" onblur="eblBVFillHyphen(this)"></td>`+
+        `<td><input type="text" oninput="eblCalcBV(this)" onblur="eblBVFillHyphen(this)"></td>`+
+        `<td><input type="text" oninput="eblBVMarkManual(this)" onblur="eblBVFillHyphen(this)"></td>`+
+        `<td><input type="text" oninput="eblBVMarkManual(this)" onblur="eblBVFillHyphen(this)"></td>`+
+        `<td><input type="text" oninput="eblCalcBV(this)" onblur="eblBVFillHyphen(this)"></td>`+
+        `<td><input type="text" oninput="eblBVMarkManual(this)" onblur="eblBVFillHyphen(this)"></td>`+
+        `<td><input type="text" oninput="eblBVMarkManual(this)" onblur="eblBVFillHyphen(this)"></td>`;
     document.getElementById('ebl-cost-body').appendChild(costRow);
     setSaveStatus('unsaved');
 }
@@ -696,7 +803,18 @@ function collectFormData() {
     });
     data._cost_rows=[...document.querySelectorAll('#ebl-cost-body tr')].map(row=>{
         const ins=row.querySelectorAll('input');
-        return{floor:ins[0]?.value||'',area_plan:ins[1]?.value||'',area_phys:ins[2]?.value||'',cost_per_sft:ins[3]?.value||'',est_plan:ins[4]?.value||'',est_phys:ins[5]?.value||'',work_pct:ins[6]?.value||'',present_plan:ins[7]?.value||'',present_phys:ins[8]?.value||''};
+        // Save both the value and whether it was manually entered (for restore on load)
+        return{
+            floor:       ins[0]?.value||'',
+            area_plan:   ins[1]?.value||'',
+            area_phys:   ins[2]?.value||'',
+            cost_per_sft:ins[3]?.value||'',
+            est_plan:    ins[4]?.value||'',  est_plan_manual:    ins[4]?.dataset.manual||'',
+            est_phys:    ins[5]?.value||'',  est_phys_manual:    ins[5]?.dataset.manual||'',
+            work_pct:    ins[6]?.value||'',
+            present_plan:ins[7]?.value||'',  present_plan_manual:ins[7]?.dataset.manual||'',
+            present_phys:ins[8]?.value||'',  present_phys_manual:ins[8]?.dataset.manual||''
+        };
     });
     data._photos=eblPhotos;
     data._formType='ebl-land-building';
@@ -716,7 +834,7 @@ function populateFormData(fd) {
         document.getElementById('ebl-unit-body').innerHTML='';
         document.getElementById('ebl-comp-body').innerHTML='';
         const cb=document.getElementById('ebl-cost-body');
-        while(cb.rows.length>1) cb.deleteRow(-1);
+        while(cb.rows.length>0) cb.deleteRow(-1);   // clear ALL rows including pre-built ones
         eblFloorCount=0;
 
         fd._floor_area_rows.forEach((r,idx)=>{
@@ -741,23 +859,28 @@ function populateFormData(fd) {
             document.getElementById('ebl-comp-body').appendChild(cRow);
         });
 
+        // Restore cost rows — all cells editable, manual flags restored
         if(Array.isArray(fd._cost_rows)){
-            fd._cost_rows.forEach((r,idx)=>{
-                if(idx===0){
-                    const ins=cb.rows[0].querySelectorAll('input');
-                    [r.floor,r.area_plan,r.area_phys,r.cost_per_sft,r.est_plan,r.est_phys,r.work_pct,r.present_plan,r.present_phys]
-                    .forEach((v,i)=>{if(ins[i])ins[i].value=v||'';});
-                } else {
-                    const cr=document.createElement('tr');
-                    cr.innerHTML=`<td><input type="text" value="${r.floor||''}" style="min-width:80px;"></td>`+
-                        [r.area_plan,r.area_phys,r.cost_per_sft,r.est_plan,r.est_phys,r.work_pct,r.present_plan,r.present_phys]
-                        .map((v,i)=>{
-                            const ro=[3,4,6,7].includes(i)?' readonly':'';
-                            const oi=[0,1,2,5].includes(i)?' oninput="eblCalcBV(this)"':'';
-                            return`<td><input type="text" value="${v||''}"${ro}${oi}></td>`;
-                        }).join('');
-                    cb.appendChild(cr);
-                }
+            fd._cost_rows.forEach((r)=>{
+                const cr=document.createElement('tr');
+                cr.innerHTML=
+                    `<td><input type="text" value="${r.floor||''}" style="min-width:80px;" oninput="eblBVMarkManual(this)" onblur="eblBVFillHyphen(this)"></td>`+
+                    `<td><input type="text" value="${r.area_plan||''}" oninput="eblCalcBV(this)" onblur="eblBVFillHyphen(this)"></td>`+
+                    `<td><input type="text" value="${r.area_phys||''}" oninput="eblCalcBV(this)" onblur="eblBVFillHyphen(this)"></td>`+
+                    `<td><input type="text" value="${r.cost_per_sft||''}" oninput="eblCalcBV(this)" onblur="eblBVFillHyphen(this)"></td>`+
+                    `<td><input type="text" value="${r.est_plan||''}" oninput="eblBVMarkManual(this)" onblur="eblBVFillHyphen(this)"></td>`+
+                    `<td><input type="text" value="${r.est_phys||''}" oninput="eblBVMarkManual(this)" onblur="eblBVFillHyphen(this)"></td>`+
+                    `<td><input type="text" value="${r.work_pct||''}" oninput="eblCalcBV(this)" onblur="eblBVFillHyphen(this)"></td>`+
+                    `<td><input type="text" value="${r.present_plan||''}" oninput="eblBVMarkManual(this)" onblur="eblBVFillHyphen(this)"></td>`+
+                    `<td><input type="text" value="${r.present_phys||''}" oninput="eblBVMarkManual(this)" onblur="eblBVFillHyphen(this)"></td>`;
+                cb.appendChild(cr);
+
+                // Restore manual flags so auto-calc doesn't wipe user overrides
+                const ins = cr.querySelectorAll('input');
+                if(r.est_plan_manual)     ins[4].dataset.manual = '1';
+                if(r.est_phys_manual)     ins[5].dataset.manual = '1';
+                if(r.present_plan_manual) ins[7].dataset.manual = '1';
+                if(r.present_phys_manual) ins[8].dataset.manual = '1';
             });
         }
     }
