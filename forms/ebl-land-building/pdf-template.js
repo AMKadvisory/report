@@ -120,10 +120,14 @@ const EBLLandBuildingPDF = {
         // Numbered list with overflow check
         const numberedList = (y, items) => {
             items.forEach((txt, i) => {
-                const ls = doc.splitTextToSize(`${i+1}. ${txt}`, CW - 4);
+                const prefix = `${i+1}. `;
+                const prefixW = doc.getTextWidth(prefix);
+                const ls = doc.splitTextToSize(txt, CW - 4 - prefixW);
                 if (y + ls.length*4.5 > CONTENT_BOTTOM) y = E.newPage();
-                E.normal(9); doc.text(ls, ML+2, y);
-                y += ls.length*4.5 + 2;
+                E.normal(9);
+                doc.text(prefix, ML+2, y);
+                doc.text(ls, ML+2+prefixW, y, { align: 'justify', maxWidth: CW - 4 - prefixW });
+                y += ls.length*4 + 0.5;
             });
             return y;
         };
@@ -264,7 +268,7 @@ const EBLLandBuildingPDF = {
         // Draw formula texts (bottom row)
         E.italic(8);
         hx = ML + vCws[0];
-        const formulas = ['a', 'b', 'c=a×b', 'd', 'e=c+d'];
+        const formulas = ['a', 'b', 'c=a*b', 'd', 'e=c+d'];
         for (let i = 0; i < formulas.length; i++) {
             doc.text(formulas[i], hx + vCws[i+1]/2, y + hdrH1 + 3.5, { align: 'center' });
             hx += vCws[i+1];
@@ -507,7 +511,7 @@ const EBLLandBuildingPDF = {
         y += 5;
 
         // FIX 3b: Floor Unit table — tblHeader now auto-sizes height, no overflow
-        const uCws = [22,18,18,16,18,16,18,18,14];
+        const uCws = [25,20,20,18,20,18,20,20,17];
         y = tblHeader(y, ['Floor','Unit/Floor\n(Plan)','Unit/Floor\n(Phys)','Rooms','Bathrooms','Balcony',
                           'Drawing\nRoom','Dining\nRoom','Drawing\nCum Dining'], uCws);
         const unitRows = Array.isArray(fd._floor_unit_rows) && fd._floor_unit_rows.length
@@ -523,13 +527,13 @@ const EBLLandBuildingPDF = {
         y = heading(y, 'G. Setback Comparison:');
         const gCws = [30, 50, 50, 48];
         y = tblHeader(y, ['Direction','As Per Approved Plan (Ft.)','As Per Physical (Ft.)','Deviation (Ft.)'], gCws);
-        y = formulaRow(y, ['','a','b','c = b − a'], gCws);
+        y = formulaRow(y, ['','a','b','c = b-a'], gCws);
         [['North','setback_north'], ['South','setback_south'], ['East','setback_east'],
          ['West','setback_west'],  ['Road (N/S)','setback_ns'], ['Road (E/W)','setback_ew'],
         ].forEach(([label, key]) => {
             const plan = parseFloat(fd[key+'_plan']||0)||0;
             const phys = parseFloat(fd[key+'_phys']||0)||0;
-            const dev  = plan||phys ? (phys-plan).toFixed(2) : '';
+            const dev = plan||phys ? `(${Math.abs(phys-plan).toFixed(2)})` : '';
             y = tblRow(y, [label, plan||'', phys||'', dev], gCws);
         });
 
@@ -540,7 +544,7 @@ const EBLLandBuildingPDF = {
 
         // FIX 3c: H. Construction % — tblHeader now auto-sizes height, no overflow
         y = heading(y, 'H. Construction Percentage:');
-        const hCws = [20,14,14,14,13,16,16,14,14,14,13,16];
+        const hCws = [22,15,11,12,12,16,16,12,14,18,11,19];
         y = tblHeader(y, ['Floor','Structure','Brick','Wood','Metal','Plumbing\n& Sanitary',
                           'Electrical','Plaster','General\nFloor','Aluminium','Paint','Work\nCompletion %'], hCws);
         const compRows = Array.isArray(fd._completion_rows) && fd._completion_rows.length
@@ -555,51 +559,155 @@ const EBLLandBuildingPDF = {
 
         // FIX 3d: I. Floor-wise Building Value — tblHeader now auto-sizes height, no overflow
         y = heading(y, 'I. Floor-wise Building Value:');
-        const iCws = [20,18,18,22,20,20,18,22,20];
-        y = tblHeader(y, ['Floor','Area Plan\n(Sft.)','Area Phys.\n(Sft.)','Cost/Sft\n(BDT)',
-                          'Est. Plan\n(BDT)','Est. Phys.\n(BDT)','Work %',
-                          'Present Plan\n(BDT)','Present Phys.\n(BDT)'], iCws);
-        y = formulaRow(y, ['','a','b','c','d=a×c','e=b×c','f','g=d×f','h=e×f'], iCws);
+        const iCws = [22, 16, 18, 22, 22, 22, 18, 20, 20];
 
+        const iR1H = 12, iR2H = 12, iR3H = 6;
+        const iTotalHdrH = iR1H + iR2H + iR3H;
+
+        if (y + iTotalHdrH > CONTENT_BOTTOM) y = E.newPage();
+        doc.setDrawColor(0,0,0); doc.setLineWidth(0.2);
+        E.bold(9);
+
+        // Column x positions
+        const iXPos = iCws.reduce((acc, w, i) => {
+            acc.push(i === 0 ? ML : acc[i-1] + iCws[i-1]);
+            return acc;
+        }, []);
+
+        // Helper: draw cell with centered wrapped text
+        const iHdrCell = (x, y, w, h, label) => {
+            doc.rect(x, y, w, h);
+            const ls = doc.splitTextToSize(label, w - 2);
+            const textY = y + (h - (ls.length - 1) * 4.5) / 2 + 1.5;
+            doc.text(ls, x + w/2, textY, { align: 'center' });
+        };
+
+        // ── ROW 1 ──────────────────────────────────────────────
+        // Floor (rowspan=3)
+        iHdrCell(iXPos[0], y, iCws[0], iTotalHdrH, 'Floor');
+
+        // Area (colspan=2)
+        iHdrCell(iXPos[1], y, iCws[1]+iCws[2], iR1H, 'Area (Sft.)');
+
+        // Present Construction Cost (rowspan=3)
+        iHdrCell(iXPos[3], y, iCws[3], iTotalHdrH, 'Present\nConstruction\nCost per Sft.\n(BDT)');
+
+        // Estimated Value (colspan=2)
+        iHdrCell(iXPos[4], y, iCws[4]+iCws[5], iR1H, 'Estimated Value (BDT) for\n100% completion of Construction');
+
+        // Work Completion (rowspan=3)
+        iHdrCell(iXPos[6], y, iCws[6], iTotalHdrH, 'Work\nCompletion\n(%)\ntill date');
+
+        // Present Value (colspan=2)
+        iHdrCell(iXPos[7], y, iCws[7]+iCws[8], iR1H, 'Present Value (BDT)');
+
+        // ── ROW 2 ──────────────────────────────────────────────
+        const iY2 = y + iR1H;
+        iHdrCell(iXPos[1], iY2, iCws[1], iR2H, 'As per\nPlan');
+        iHdrCell(iXPos[2], iY2, iCws[2], iR2H, 'As per\nPhysical\nInspection');
+        iHdrCell(iXPos[4], iY2, iCws[4], iR2H, 'As per Plan');
+        iHdrCell(iXPos[5], iY2, iCws[5], iR2H, 'As per\nPhysical\nInspection');
+        iHdrCell(iXPos[7], iY2, iCws[7], iR2H, 'As per\nPlan');
+        iHdrCell(iXPos[8], iY2, iCws[8], iR2H, 'As per\nPhysical\nInspection');
+
+        // ── ROW 3 (formula row) ─────────────────────────────────
+        const iY3 = y + iR1H + iR2H;
+        E.italic(8);
+        [['a',1],['b',2],['c',3],['d=a*c',4],['e=b*c',5],['f',6],['g=d*f',7],['h=e*f',8]].forEach(([label, i]) => {
+            doc.rect(iXPos[i], iY3, iCws[i], iR3H);
+            doc.text(label, iXPos[i] + iCws[i]/2, iY3 + 4, { align: 'center' });
+        });
+
+        y += iTotalHdrH;
+
+        // ── DATA ROWS ───────────────────────────────────────────
+        E.normal(9);
         const costRows = Array.isArray(fd._cost_rows) && fd._cost_rows.length
             ? fd._cost_rows : [{ floor:'Foundation' }, { floor:'Ground Fl.' }];
 
         let totD=0, totE=0, totG=0, totH=0;
         costRows.forEach(r => {
-            const a = parseFloat(r.area_plan||0), b = parseFloat(r.area_phys||0);
-            const c = parseFloat((r.cost_per_sft||'0').replace(/,/g,''));
-            const f = parseFloat(r.work_pct||0)/100;
-            const d=a*c, e=b*c, g=d*f, h=e*f;
+            // Use saved calculated values directly, fallback to recalculate if missing
+            const a = parseFloat((r.area_plan    ||'').replace(/,/g,'').replace('–','')) || 0;
+            const b = parseFloat((r.area_phys   ||'').replace(/,/g,'').replace('–','')) || 0;
+            const c = parseFloat((r.cost_per_sft||'').replace(/,/g,'').replace('–','')) || 0;
+            const f = parseFloat((r.work_pct    ||'').replace(/,/g,'').replace('–','')) || 0;
+
+            // Use saved est/present values if available, otherwise recalculate
+            const d = parseFloat((r.est_plan    ||'').replace(/,/g,'').replace('–','')) || (a * c);
+            const e = parseFloat((r.est_phys    ||'').replace(/,/g,'').replace('–','')) || (b * c);
+            const g = parseFloat((r.present_plan||'').replace(/,/g,'').replace('–','')) || (d * f / 100);
+            const h = parseFloat((r.present_phys||'').replace(/,/g,'').replace('–','')) || (e * f / 100);
+
             totD+=d; totE+=e; totG+=g; totH+=h;
-            y = tblRow(y, [r.floor||'', a?fmt(a):'', b?fmt(b):'', c?fmt(c):'',
-                           d?fmt(d):'', e?fmt(e):'', r.work_pct||'', g?fmt(g):'', h?fmt(h):''], iCws);
+
+            y = tblRow(y, [
+                r.floor||'',
+                a ? fmt(a) : '-',
+                b ? fmt(b) : '-',
+                c ? fmt(c) : '-',
+                d ? fmt(d) : '-',
+                e ? fmt(e) : '-',
+                f ? f+'%'  : '-',
+                g ? fmt(g) : '-',
+                h ? fmt(h) : '-'
+            ], iCws);
         });
 
-        E.bold(9);
-        y = tblRow(y, ['Total Value of Building\u00B9','','','',fmt(totD),fmt(totE),'',fmt(totG),fmt(totH)], iCws);
+        // ── FOOTER ROWS ─────────────────────────────────────────
         const depPct = age ? Math.round((100/70)*age) : 0;
         const depG = totG*depPct/100, depH = totH*depPct/100;
-        y = tblRow(y, ['Depreciation\u00B2 @ '+depPct+'%','','','','','','',fmt(depG),fmt(depH)], iCws);
-        y = tblRow(y, ['Net Value of the Building','','','','','','',fmt(totG-depG),fmt(totH-depH)], iCws);
+        const iFRh = 7;
+
+        // Total Value row
+        if (y + iFRh > CONTENT_BOTTOM) y = E.newPage();
+        doc.setDrawColor(0,0,0); doc.setLineWidth(0.2);
+        E.bold(9);
+        const iSpanW1 = iCws[0]+iCws[1]+iCws[2]+iCws[3];
+        doc.rect(ML, y, iSpanW1, iFRh);
+        doc.text('Total Value of Building (1)', ML+2, y+4.5);
+        doc.rect(iXPos[4], y, iCws[4], iFRh); doc.text(fmt(totD), iXPos[4]+iCws[4]/2, y+4.5, { align:'center' });
+        doc.rect(iXPos[5], y, iCws[5], iFRh); doc.text(fmt(totE), iXPos[5]+iCws[5]/2, y+4.5, { align:'center' });
+        doc.rect(iXPos[6], y, iCws[6], iFRh);
+        doc.rect(iXPos[7], y, iCws[7], iFRh); doc.text(fmt(totG), iXPos[7]+iCws[7]/2, y+4.5, { align:'center' });
+        doc.rect(iXPos[8], y, iCws[8], iFRh); doc.text(fmt(totH), iXPos[8]+iCws[8]/2, y+4.5, { align:'center' });
+        y += iFRh;
+
+        // Depreciation row
+        E.normal(9);
+        if (y + iFRh > CONTENT_BOTTOM) y = E.newPage();
+        const iSpanW2 = iCws[0]+iCws[1]+iCws[2]+iCws[3]+iCws[4]+iCws[5]+iCws[6];
+        doc.rect(ML, y, iSpanW2, iFRh);
+        doc.text('Depreciation (2) @ '+depPct+'%', ML+2, y+4.5);
+        doc.rect(iXPos[7], y, iCws[7], iFRh); doc.text(fmt(depG), iXPos[7]+iCws[7]/2, y+4.5, { align:'center' });
+        doc.rect(iXPos[8], y, iCws[8], iFRh); doc.text(fmt(depH), iXPos[8]+iCws[8]/2, y+4.5, { align:'center' });
+        y += iFRh;
+
+        // Net Value row
+        E.bold(9);
+        if (y + iFRh > CONTENT_BOTTOM) y = E.newPage();
+        doc.rect(ML, y, iSpanW2, iFRh);
+        doc.text('Net Value of Building', ML+2, y+4.5);
+        doc.rect(iXPos[7], y, iCws[7], iFRh); doc.text(fmt(totG-depG), iXPos[7]+iCws[7]/2, y+4.5, { align:'center' });
+        doc.rect(iXPos[8], y, iCws[8], iFRh); doc.text(fmt(totH-depH), iXPos[8]+iCws[8]/2, y+4.5, { align:'center' });
+        y += iFRh;
+
         E.normal(10); y += 5;
 
-        E.normal(9);
+        E.bold(9);
+        doc.text('Note:', ML, y); 
+        E.italic(9);
+
         ['1. Building value has been considered based on Approved Plan and construction cost as per current market standards.',
-         '2. Average life of concrete structure has been considered as 70 Years.',
+        age ? `2. Average life of concrete structure has been considered as 70 Years. As this structure is ${age}-years-old, thus the Depreciation is considered as (100/70) x ${age} = ${((100/70)*age).toFixed(2)} ~ ${depPct}%.`
+            : '2. Average life of concrete structure has been considered as 70 Years.',
         ].forEach(note => {
-            const ls = doc.splitTextToSize(note, CW-4);
+            const ls = doc.splitTextToSize(note, CW - 14);
             if (y + ls.length*4.5 > CONTENT_BOTTOM) y = E.newPage();
-            doc.text(ls, ML+2, y); y += ls.length*4.5+2;
+            doc.text(ls, ML + 12, y); y += ls.length*4 + 1;
         });
 
-        if (age) {
-            y += 3;
-            const depExact = ((100/70)*age).toFixed(2);
-            const dline = `As this structure is ${age}-year-old, Depreciation = (100/70) × ${age} = ${depExact} \u2245 ${depPct}%.`;
-            const dlines = doc.splitTextToSize(dline, CW);
-            if (y + dlines.length*4.5 > CONTENT_BOTTOM) y = E.newPage();
-            E.normal(10); doc.text(dlines, ML, y); y += dlines.length*4.5+5;
-        }
+        E.normal(10); y += 5;
 
         // ══════════════════════════════════════════════════
         //  PAGE 10 – J, K, L  (Sheet 10)
@@ -645,37 +753,331 @@ const EBLLandBuildingPDF = {
             'The report is duly signed by the authorized signatories of AMK and it contains 18 (Eighteen) pages.',
         ]);
 
-        // ══════════════════════════════════════════════════
-        //  ANNEXURE-I – PHOTOS
-        // ══════════════════════════════════════════════════
-        const photos = Array.isArray(fd._photos) && fd._photos.length ? fd._photos : [];
-        if (photos.length) {
-            const imgW=158, imgH=102, capH=6, gapY=8, perPage=2;
-            let photosY = 0;
-            for (let i=0; i<photos.length; i++) {
+        // ══════════════════════════════════════════════════════════
+        //  ANNEXURE-I – PHOTOS (2 per page, 158×102mm each)
+        // ══════════════════════════════════════════════════════════
+        const ann1 = Array.isArray(fd._ann1_photos) ? fd._ann1_photos : [];
+        if (ann1.length) {
+            const imgW = 158, imgH = 102, capH = 7, perPage = 2;
+            const totalSlotH = imgH + capH;
+            const gapBetween = 8;
+
+            for (let i = 0; i < ann1.length; i++) {
                 if (i % perPage === 0) {
-                    const y0 = E.newPage();
+                    y = E.newPage();
+                    // Annexure heading
                     E.bold(11);
-                    doc.text('Annexure-I: Photograph of Property'+(i>0?' (Contd.)':''), PW/2, y0+5, { align:'center' });
-                    photosY = y0 + 14;
+                    const ann1Title = 'Annexure-I: Photograph of Property';
+                    doc.text(ann1Title, ML, y + 5);
+                    const ann1TitleW = doc.getTextWidth(ann1Title);
+                    doc.setLineWidth(0.3);
+                    doc.line(ML, y + 6.5, ML + ann1TitleW, y + 6.5);
+                    y += 14;
                 }
+
                 const slot = i % perPage;
-                const iy   = photosY + slot*(imgH+capH+gapY);
-                const imgX = ML + (CW-imgW)/2;
-                doc.setDrawColor(0,0,0);
+                const iy = y + slot * (totalSlotH + gapBetween);
+                const imgX = ML + (CW - imgW) / 2;
+
+                // Draw image
+                doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.3);
                 try {
-                    const fmt2 = photos[i].dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
-                    doc.addImage(photos[i].dataUrl, fmt2, imgX, iy, imgW, imgH);
-                } catch(e) { doc.setFillColor(240,240,240); doc.rect(imgX, iy, imgW, imgH, 'FD'); }
-                doc.setDrawColor(0,0,0); doc.setLineWidth(0.4); doc.rect(imgX, iy, imgW, imgH);
-                doc.setLineWidth(0.2);
-                const cap = photos[i].caption || photos[i].name.replace(/\.[^/.]+$/,'');
-                E.normal(10); doc.text(cap.length>50?cap.slice(0,48)+'…':cap, PW/2, iy+imgH+4.5, { align:'center' });
+                    const fmt2 = ann1[i].dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+                    doc.addImage(ann1[i].dataUrl, fmt2, imgX, iy, imgW, imgH);
+                } catch(e) {
+                    doc.setFillColor(230, 230, 230);
+                    doc.rect(imgX, iy, imgW, imgH, 'FD');
+                }
+                doc.rect(imgX, iy, imgW, imgH);
+
+                // Caption
+                const cap1 = ann1[i].caption || ann1[i].name.replace(/\.[^/.]+$/, '');
+                const cap1Lines = doc.splitTextToSize(cap1, imgW);
+                E.italic(9);
+                doc.text(cap1Lines, ML + CW / 2, iy + imgH + 4.5, { align: 'center' });
             }
         }
 
+        // ══════════════════════════════════════════════════════════
+        //  ANNEXURE-II – HAND SKETCH MAP (description + 158×178mm)
+        // ══════════════════════════════════════════════════════════
+        const ann2 = Array.isArray(fd._ann2_photos) ? fd._ann2_photos : [];
+        {
+            y = E.newPage();
+            // Heading
+            E.bold(11);
+            const ann2Title = 'Annexure-II: Hand Sketch Map';
+            doc.text(ann2Title, ML, y + 5);
+            const ann2TitleW = doc.getTextWidth(ann2Title);
+            doc.setLineWidth(0.3);
+            doc.line(ML, y + 6.5, ML + ann2TitleW, y + 6.5);
+            y += 14;
+
+            // Description
+            const ann2Desc = fd.annexure2_desc || '';
+            if (ann2Desc) {
+                E.normal(10);
+                const descLines = doc.splitTextToSize(ann2Desc, CW);
+                doc.text(descLines, ML, y);
+                y += descLines.length * 4.5 + 6;
+            }
+
+            // Image
+            if (ann2.length) {
+                const imgW = 158, imgH = 178;
+                const imgX = ML + (CW - imgW) / 2;
+                doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.3);
+                try {
+                    const fmt2 = ann2[0].dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+                    doc.addImage(ann2[0].dataUrl, fmt2, imgX, y, imgW, imgH);
+                } catch(e) {
+                    doc.setFillColor(230, 230, 230);
+                    doc.rect(imgX, y, imgW, imgH, 'FD');
+                }
+                doc.rect(imgX, y, imgW, imgH);
+
+                // Caption
+                const cap2 = ann2[0].caption || ann2[0].name.replace(/\.[^/.]+$/, '');
+                const cap2Lines = doc.splitTextToSize(cap2, imgW);
+                E.italic(9);
+                doc.text(cap2Lines, ML + CW / 2, y + imgH + 4.5, { align: 'center' });
+                y += imgH + 10;
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  ANNEXURE-III – MOUZA MAP (description + 158×178mm)
+        // ══════════════════════════════════════════════════════════
+        const ann3 = Array.isArray(fd._ann3_photos) ? fd._ann3_photos : [];
+        {
+            y = E.newPage();
+            // Heading
+            E.bold(11);
+            const ann3Title = 'Annexure-III: Mouza Map';
+            doc.text(ann3Title, ML, y + 5);
+            const ann3TitleW = doc.getTextWidth(ann3Title);
+            doc.setLineWidth(0.3);
+            doc.line(ML, y + 6.5, ML + ann3TitleW, y + 6.5);
+            y += 14;
+
+            // Description
+            const ann3Desc = fd.annexure3_desc || '';
+            if (ann3Desc) {
+                E.normal(10);
+                const descLines = doc.splitTextToSize(ann3Desc, CW);
+                doc.text(descLines, ML, y);
+                y += descLines.length * 4.5 + 6;
+            }
+
+            // Image
+            if (ann3.length) {
+                const imgW = 158, imgH = 178;
+                const imgX = ML + (CW - imgW) / 2;
+                doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.3);
+                try {
+                    const fmt2 = ann3[0].dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+                    doc.addImage(ann3[0].dataUrl, fmt2, imgX, y, imgW, imgH);
+                } catch(e) {
+                    doc.setFillColor(230, 230, 230);
+                    doc.rect(imgX, y, imgW, imgH, 'FD');
+                }
+                doc.rect(imgX, y, imgW, imgH);
+
+                // Caption
+                const cap3 = ann3[0].caption || ann3[0].name.replace(/\.[^/.]+$/, '');
+                const cap3Lines = doc.splitTextToSize(cap3, imgW);
+                E.italic(9);
+                doc.text(cap3Lines, ML + CW / 2, y + imgH + 4.5, { align: 'center' });
+                y += imgH + 10;
+            }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  ANNEXURE-IV – GOOGLE MAP (1 line desc + 2 images 158×102mm)
+        // ══════════════════════════════════════════════════════════
+        const ann4 = Array.isArray(fd._ann4_photos) ? fd._ann4_photos : [];
+        {
+            y = E.newPage();
+            // Heading
+            E.bold(11);
+            const ann4Title = 'Annexure-IV: Location on Google Map';
+            doc.text(ann4Title, ML, y + 5);
+            const ann4TitleW = doc.getTextWidth(ann4Title);
+            doc.setLineWidth(0.3);
+            doc.line(ML, y + 6.5, ML + ann4TitleW, y + 6.5);
+            y += 14;
+
+            // One line description
+            const ann4Desc = fd.annexure4_desc || '';
+            if (ann4Desc) {
+                E.normal(10);
+                doc.text(ann4Desc, ML, y);
+                y += 7;
+            }
+
+            // Two images stacked
+            const imgW4 = 158, imgH4 = 102, capH4 = 7, gap4 = 8;
+            ann4.slice(0, 2).forEach((photo, i) => {
+                const imgX = ML + (CW - imgW4) / 2;
+                doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.3);
+                try {
+                    const fmt2 = photo.dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+                    doc.addImage(photo.dataUrl, fmt2, imgX, y, imgW4, imgH4);
+                } catch(e) {
+                    doc.setFillColor(230, 230, 230);
+                    doc.rect(imgX, y, imgW4, imgH4, 'FD');
+                }
+                doc.rect(imgX, y, imgW4, imgH4);
+
+                // Caption
+                const cap4 = photo.caption || photo.name.replace(/\.[^/.]+$/, '');
+                const cap4Lines = doc.splitTextToSize(cap4, imgW4);
+                E.italic(9);
+                doc.text(cap4Lines, ML + CW / 2, y + imgH4 + 4.5, { align: 'center' });
+                y += imgH4 + capH4 + gap4;
+            });
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  ANNEXURE-V & VI – QR CODES (same page, 51×51mm each, centered)
+        // ══════════════════════════════════════════════════════════
+        const ann5 = Array.isArray(fd._ann5_photos) ? fd._ann5_photos : [];
+        const ann6 = Array.isArray(fd._ann6_photos) ? fd._ann6_photos : [];
+        {
+            y = E.newPage();
+            const qrW = 51, qrH = 51;
+            const qrX = ML + (CW - qrW) / 2;
+
+            // Annexure V heading
+            E.bold(11);
+            const ann5Title = 'Annexure-V: QR Code for video of the Property';
+            doc.text(ann5Title, ML, y + 5);
+            const ann5TitleW = doc.getTextWidth(ann5Title);
+            doc.setLineWidth(0.3);
+            doc.line(ML, y + 6.5, ML + ann5TitleW, y + 6.5);
+            y += 14;
+
+            // QR V image
+            if (ann5.length) {
+                doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.3);
+                try {
+                    const fmt2 = ann5[0].dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+                    doc.addImage(ann5[0].dataUrl, fmt2, qrX, y, qrW, qrH);
+                } catch(e) {
+                    doc.setFillColor(230, 230, 230);
+                    doc.rect(qrX, y, qrW, qrH, 'FD');
+                }
+                doc.rect(qrX, y, qrW, qrH);
+            } else {
+                // Placeholder box if no image
+                doc.setFillColor(240, 240, 240);
+                doc.rect(qrX, y, qrW, qrH, 'FD');
+            }
+            y += qrH + 14;
+
+            // Annexure VI heading
+            E.bold(11);
+            const ann6Title = 'Annexure-VI: QR Code for Map of the Property';
+            doc.text(ann6Title, ML, y + 5);
+            const ann6TitleW = doc.getTextWidth(ann6Title);
+            doc.setLineWidth(0.3);
+            doc.line(ML, y + 6.5, ML + ann6TitleW, y + 6.5);
+            y += 14;
+
+            // QR VI image
+            if (ann6.length) {
+                doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.3);
+                try {
+                    const fmt2 = ann6[0].dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+                    doc.addImage(ann6[0].dataUrl, fmt2, qrX, y, qrW, qrH);
+                } catch(e) {
+                    doc.setFillColor(230, 230, 230);
+                    doc.rect(qrX, y, qrW, qrH, 'FD');
+                }
+                doc.rect(qrX, y, qrW, qrH);
+            } else {
+                doc.setFillColor(240, 240, 240);
+                doc.rect(qrX, y, qrW, qrH, 'FD');
+            }
+            y += qrH + 14;
+
+            // Instructions
+            E.bold(10);
+            doc.text('Instructions for use:', ML + 20, y); y += 6;
+            E.italic(9);
+            ['Download & install any QR Code scanner/reader.',
+            'Scan the attached QR Code.',
+            'Open the link using Google Chrome/any browser.',
+            ].forEach(inst => {
+                doc.circle(ML + 23, y - 1, 0.8, 'F');
+                doc.text(inst, ML + 26, y);
+                y += 5.5;
+            });
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  ANNEXURE-VII – SRO MOUZA VALUE (full page, 158×178mm)
+        // ══════════════════════════════════════════════════════════
+        const ann7 = Array.isArray(fd._ann7_photos) ? fd._ann7_photos : [];
+        if (ann7.length) {
+            y = E.newPage();
+            // Heading
+            E.bold(11);
+            const ann7Title = 'Annexure-VII: SRO Mouza Value';
+            doc.text(ann7Title, ML, y + 5);
+            const ann7TitleW = doc.getTextWidth(ann7Title);
+            doc.setLineWidth(0.3);
+            doc.line(ML, y + 6.5, ML + ann7TitleW, y + 6.5);
+            y += 14;
+
+            const imgW = 158, imgH = 178;
+            const imgX = ML + (CW - imgW) / 2;
+            doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.3);
+            try {
+                const fmt2 = ann7[0].dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+                doc.addImage(ann7[0].dataUrl, fmt2, imgX, y, imgW, imgH);
+            } catch(e) {
+                doc.setFillColor(230, 230, 230);
+                doc.rect(imgX, y, imgW, imgH, 'FD');
+            }
+            doc.rect(imgX, y, imgW, imgH);
+        }
+
+        // ══════════════════════════════════════════════════════════
+        //  ANNEXURE-VIII – AREA MASTER PLAN (full page, 158×178mm)
+        // ══════════════════════════════════════════════════════════
+        const ann8 = Array.isArray(fd._ann8_photos) ? fd._ann8_photos : [];
+        if (ann8.length) {
+            y = E.newPage();
+            // Heading
+            E.bold(11);
+            const ann8Title = 'Annexure-VIII: Status in Area Master Plan';
+            doc.text(ann8Title, ML, y + 5);
+            const ann8TitleW = doc.getTextWidth(ann8Title);
+            doc.setLineWidth(0.3);
+            doc.line(ML, y + 6.5, ML + ann8TitleW, y + 6.5);
+            y += 14;
+
+            const imgW = 158, imgH = 178;
+            const imgX = ML + (CW - imgW) / 2;
+            doc.setDrawColor(0, 0, 0); doc.setLineWidth(0.3);
+            try {
+                const fmt2 = ann8[0].dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+                doc.addImage(ann8[0].dataUrl, fmt2, imgX, y, imgW, imgH);
+            } catch(e) {
+                doc.setFillColor(230, 230, 230);
+                doc.rect(imgX, y, imgW, imgH, 'FD');
+            }
+            doc.rect(imgX, y, imgW, imgH);
+
+            // Caption below image
+            const cap8 = ann8[0].caption || ann8[0].name.replace(/\.[^/.]+$/, '');
+            const cap8Lines = doc.splitTextToSize(cap8, imgW);
+            E.italic(9);
+            doc.text(cap8Lines, ML + CW / 2, y + imgH + 4.5, { align: 'center' });
+        }
         // Save
-        const filename = 'EBL_LandBuilding_' + (v('reference_no') || v('valuation_ref_no') || 'Report') + '.pdf';
+        const filename = 'EBL_LandBuilding_' + (v('reference_account_name') || v('letter_ref') || 'Report') + '.pdf';
         E.save(filename);
     }
 };
