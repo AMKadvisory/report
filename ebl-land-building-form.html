@@ -94,7 +94,7 @@
         <div class="section-nav-item" onclick="showSection('sec-hi',this)"><span>💰</span> H. Work %  &amp;  I. Bldg Value</div>
         <div class="section-nav-item" onclick="showSection('sec-jkl',this)"><span>💬</span> J. Price Justification</div>
         <div class="nav-section-label">Documents</div>
-        <div class="section-nav-item" onclick="showSection('sec-photos',this)"><span>📷</span> Photos</div>
+        <div class="section-nav-item" onclick="showSection('sec-photos',this)"><span>📷</span> Annexures (Documents)</div>
     </div>
 
     <div class="form-main">
@@ -477,20 +477,109 @@
             </div>
         </div>
 
-        <!-- ══ PHOTOS ══ -->
+        <!-- ══ DOCUMENTS ══ -->
         <div class="report-section" id="sec-photos">
-            <div class="section-card">
-                <div class="section-heading">📷 Annexure-I: Photographs of Property</div>
-                <p style="margin-bottom:1.5rem;color:var(--gray-600);font-size:0.875rem;">Upload photos of the property. Included in PDF as Annexure-I.</p>
-                <div id="ebl-photo-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;"></div>
-                <label style="display:inline-flex;align-items:center;gap:8px;padding:0.6rem 1.2rem;background:var(--gray-100);border:2px dashed var(--gray-200);border-radius:var(--radius-sm);cursor:pointer;font-size:0.875rem;color:var(--gray-600);" id="ebl-photo-label">
-                    <span style="font-size:1.2rem;">📁</span> Choose Photos (up to 12)
-                    <input type="file" id="ebl-photo-input" accept="image/*" multiple style="display:none;" onchange="eblHandlePhotos(this)">
-                </label>
-                <p style="margin-top:0.5rem;font-size:0.75rem;color:var(--gray-400);">JPG, PNG. Max 12 photos, 2MB each.</p>
-            </div>
-        </div>
 
+            <!-- Annexure I -->
+            <div class="section-card">
+                <div class="section-heading">📷 Annexure-I: Photograph of Property
+                    <span style="font-size:0.8rem;font-weight:400;color:var(--gray-400);margin-left:8px;">Max 14 photos</span>
+                </div>
+                <div id="ebl-ann1-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;"></div>
+                <label style="display:inline-flex;align-items:center;gap:8px;padding:0.6rem 1.2rem;background:var(--gray-100);border:2px dashed var(--gray-200);border-radius:var(--radius-sm);cursor:pointer;font-size:0.875rem;color:var(--gray-600);" id="ebl-ann1-label">
+                    <span style="font-size:1.2rem;">📁</span> Choose Photos (up to 14)
+                    <input type="file" accept="image/*" multiple style="display:none;" onchange="eblHandlePhotos(this,'ebl-ann1-grid','ebl-ann1',14,'ebl-ann1-label',true)">
+                </label>
+                <p style="margin-top:0.5rem;font-size:0.75rem;color:var(--gray-400);">JPG, PNG. Max 14 photos, 2MB each.</p>
+            </div>
+
+            <!-- Annexure II -->
+            <div class="section-card">
+                <div class="section-heading">🗺️ Annexure-II: Hand Sketch Map</div>
+                <div class="form-group" style="margin-bottom:1.5rem;">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-control" data-field="annexure2_desc" rows="3" placeholder="Describe the hand sketch map..."></textarea>
+                </div>
+                <div id="ebl-ann2-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;margin-bottom:1.5rem;"></div>
+                <label style="display:inline-flex;align-items:center;gap:8px;padding:0.6rem 1.2rem;background:var(--gray-100);border:2px dashed var(--gray-200);border-radius:var(--radius-sm);cursor:pointer;font-size:0.875rem;color:var(--gray-600);" id="ebl-ann2-label">
+                    <span style="font-size:1.2rem;">📁</span> Upload Sketch (1 image)
+                    <input type="file" accept="image/*" style="display:none;" onchange="eblHandlePhotos(this,'ebl-ann2-grid','ebl-ann2',1,'ebl-ann2-label',true)">
+                </label>
+            </div>
+
+            <!-- Annexure III -->
+            <div class="section-card">
+                <div class="section-heading">🗾 Annexure-III: Mouza Map</div>
+                <div class="form-group" style="margin-bottom:1.5rem;">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-control" data-field="annexure3_desc" rows="3" placeholder="Describe the mouza map..."></textarea>
+                </div>
+                <div id="ebl-ann3-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;margin-bottom:1.5rem;"></div>
+                <label style="display:inline-flex;align-items:center;gap:8px;padding:0.6rem 1.2rem;background:var(--gray-100);border:2px dashed var(--gray-200);border-radius:var(--radius-sm);cursor:pointer;font-size:0.875rem;color:var(--gray-600);" id="ebl-ann3-label">
+                    <span style="font-size:1.2rem;">📁</span> Upload Mouza Map (1 image)
+                    <input type="file" accept="image/*" style="display:none;" onchange="eblHandlePhotos(this,'ebl-ann3-grid','ebl-ann3',1,'ebl-ann3-label',true)">
+                </label>
+            </div>
+
+            <!-- Annexure IV -->
+            <div class="section-card">
+                <div class="section-heading">📍 Annexure-IV: Location on Google Map</div>
+                <div class="form-group" style="margin-bottom:1.5rem;">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-control" data-field="annexure4_desc" rows="3" placeholder="Describe the location map..."></textarea>
+                </div>
+                <div id="ebl-ann4-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;margin-bottom:1.5rem;"></div>
+                <label style="display:inline-flex;align-items:center;gap:8px;padding:0.6rem 1.2rem;background:var(--gray-100);border:2px dashed var(--gray-200);border-radius:var(--radius-sm);cursor:pointer;font-size:0.875rem;color:var(--gray-600);" id="ebl-ann4-label">
+                    <span style="font-size:1.2rem;">📁</span> Upload Location Maps (up to 2)
+                    <input type="file" accept="image/*" multiple style="display:none;" onchange="eblHandlePhotos(this,'ebl-ann4-grid','ebl-ann4',2,'ebl-ann4-label',true)">
+                </label>
+            </div>
+
+            <!-- Annexure V -->
+            <div class="section-card">
+                <div class="section-heading">📱 Annexure-V: QR Code for Video</div>
+                <p style="margin-bottom:1.5rem;color:var(--gray-600);font-size:0.875rem;">Upload the QR code image linking to the property video.</p>
+                <div id="ebl-ann5-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;"></div>
+                <label style="display:inline-flex;align-items:center;gap:8px;padding:0.6rem 1.2rem;background:var(--gray-100);border:2px dashed var(--gray-200);border-radius:var(--radius-sm);cursor:pointer;font-size:0.875rem;color:var(--gray-600);" id="ebl-ann5-label">
+                    <span style="font-size:1.2rem;">📁</span> Upload QR Code (1 image)
+                    <input type="file" accept="image/*" style="display:none;" onchange="eblHandlePhotos(this,'ebl-ann5-grid','ebl-ann5',1,'ebl-ann5-label',false)">
+                </label>
+            </div>
+
+            <!-- Annexure VI -->
+            <div class="section-card">
+                <div class="section-heading">🗺️ Annexure-VI: QR Code for Map</div>
+                <p style="margin-bottom:1.5rem;color:var(--gray-600);font-size:0.875rem;">Upload the QR code image linking to the property map.</p>
+                <div id="ebl-ann6-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem;"></div>
+                <label style="display:inline-flex;align-items:center;gap:8px;padding:0.6rem 1.2rem;background:var(--gray-100);border:2px dashed var(--gray-200);border-radius:var(--radius-sm);cursor:pointer;font-size:0.875rem;color:var(--gray-600);" id="ebl-ann6-label">
+                    <span style="font-size:1.2rem;">📁</span> Upload QR Code (1 image)
+                    <input type="file" accept="image/*" style="display:none;" onchange="eblHandlePhotos(this,'ebl-ann6-grid','ebl-ann6',1,'ebl-ann6-label',false)">
+                </label>
+            </div>
+
+            <!-- Annexure VII -->
+            <div class="section-card">
+                <div class="section-heading">📄 Annexure-VII: SRO Mouza Value</div>
+                <p style="margin-bottom:1.5rem;color:var(--gray-600);font-size:0.875rem;">Upload the SRO Mouza Value document image.</p>
+                <div id="ebl-ann7-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;margin-bottom:1.5rem;"></div>
+                <label style="display:inline-flex;align-items:center;gap:8px;padding:0.6rem 1.2rem;background:var(--gray-100);border:2px dashed var(--gray-200);border-radius:var(--radius-sm);cursor:pointer;font-size:0.875rem;color:var(--gray-600);" id="ebl-ann7-label">
+                    <span style="font-size:1.2rem;">📁</span> Upload Document (1 image)
+                    <input type="file" accept="image/*" style="display:none;" onchange="eblHandlePhotos(this,'ebl-ann7-grid','ebl-ann7',1,'ebl-ann7-label',false)">
+                </label>
+            </div>
+
+            <!-- Annexure VIII -->
+            <div class="section-card">
+                <div class="section-heading">🏙️ Annexure-VIII: Status In Area Master Plan</div>
+                <p style="margin-bottom:1.5rem;color:var(--gray-600);font-size:0.875rem;">Upload the Master Plan status image.</p>
+                <div id="ebl-ann8-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;margin-bottom:1.5rem;"></div>
+                <label style="display:inline-flex;align-items:center;gap:8px;padding:0.6rem 1.2rem;background:var(--gray-100);border:2px dashed var(--gray-200);border-radius:var(--radius-sm);cursor:pointer;font-size:0.875rem;color:var(--gray-600);" id="ebl-ann8-label">
+                    <span style="font-size:1.2rem;">📁</span> Upload Master Plan (1 image)
+                    <input type="file" accept="image/*" style="display:none;" onchange="eblHandlePhotos(this,'ebl-ann8-grid','ebl-ann8',1,'ebl-ann8-label',true)">
+                </label>
+            </div>
+
+        </div>
     </div><!-- form-main -->
 </div><!-- form-layout -->
 
@@ -752,37 +841,53 @@ function eblRemoveFloor() {
     setSaveStatus('unsaved');
 }
 
-// ── Photos ────────────────────────────────────────────────
-let eblPhotos=[];
-function eblHandlePhotos(input) {
-    const files=Array.from(input.files), rem=12-eblPhotos.length;
-    files.slice(0,rem).forEach(file => {
-        if(file.size>2*1024*1024){UI.showToast(`${file.name} too large`,'error');return;}
-        const reader=new FileReader();
-        reader.onload=e=>{
-            eblPhotos.push({name:file.name,caption:file.name.replace(/\.[^/.]+$/,''),dataUrl:e.target.result});
-            eblRenderPhotos(); setSaveStatus('unsaved');
+// ── Photos (unified for all annexures) ───────────────────
+const eblPhotoStores = {
+    'ebl-ann1': [], 'ebl-ann2': [], 'ebl-ann3': [], 'ebl-ann4': [],
+    'ebl-ann5': [], 'ebl-ann6': [], 'ebl-ann7': [], 'ebl-ann8': [],
+};
+
+function eblHandlePhotos(input, gridId, storeKey, maxCount, labelId, hasCaption) {
+    const store = eblPhotoStores[storeKey];
+    const rem   = maxCount - store.length;
+    Array.from(input.files).slice(0, rem).forEach(file => {
+        if (file.size > 2*1024*1024) { UI.showToast(`${file.name} too large`, 'error'); return; }
+        const reader = new FileReader();
+        reader.onload = e => {
+            store.push({ name: file.name, caption: file.name.replace(/\.[^/.]+$/, ''), dataUrl: e.target.result });
+            eblRenderPhotos(gridId, storeKey, maxCount, labelId, hasCaption);
+            setSaveStatus('unsaved');
         };
         reader.readAsDataURL(file);
     });
-    input.value='';
+    input.value = '';
 }
-function eblRenderPhotos() {
-    document.getElementById('ebl-photo-grid').innerHTML=eblPhotos.map((p,i)=>`
+
+function eblRenderPhotos(gridId, storeKey, maxCount, labelId, hasCaption) {
+    const store = eblPhotoStores[storeKey];
+    document.getElementById(gridId).innerHTML = store.map((p, i) => `
         <div style="border-radius:var(--radius-sm);border:1px solid var(--gray-200);overflow:hidden;display:flex;flex-direction:column;">
-            <div style="position:relative;aspect-ratio:4/3;"><img src="${p.dataUrl}" style="width:100%;height:100%;object-fit:cover;">
-                <button onclick="eblRemovePhoto(${i})" style="position:absolute;top:4px;right:4px;background:rgba(220,38,38,0.9);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>
+            <div style="position:relative;aspect-ratio:4/3;">
+                <img src="${p.dataUrl}" style="width:100%;height:100%;object-fit:cover;">
+                <button onclick="eblRemovePhoto('${gridId}','${storeKey}',${maxCount},'${labelId}',${hasCaption},${i})"
+                    style="position:absolute;top:4px;right:4px;background:rgba(220,38,38,0.9);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">×</button>
             </div>
+            ${hasCaption ? `
             <div style="padding:4px 6px;background:#f9f9f9;border-top:1px solid var(--gray-200);">
                 <input type="text" value="${p.caption}" placeholder="Caption"
-                    onchange="eblPhotos[${i}].caption=this.value;setSaveStatus('unsaved');"
+                    onchange="eblPhotoStores['${storeKey}'][${i}].caption=this.value;setSaveStatus('unsaved');"
                     style="width:100%;font-size:0.75rem;border:none;background:transparent;outline:none;color:#333;">
-            </div>
+            </div>` : ''}
         </div>`).join('');
-    const lbl=document.getElementById('ebl-photo-label');
-    if(lbl) lbl.style.display=eblPhotos.length>=12?'none':'inline-flex';
+    const lbl = document.getElementById(labelId);
+    if (lbl) lbl.style.display = store.length >= maxCount ? 'none' : 'inline-flex';
 }
-function eblRemovePhoto(i){eblPhotos.splice(i,1);eblRenderPhotos();setSaveStatus('unsaved');}
+
+function eblRemovePhoto(gridId, storeKey, maxCount, labelId, hasCaption, i) {
+    eblPhotoStores[storeKey].splice(i, 1);
+    eblRenderPhotos(gridId, storeKey, maxCount, labelId, hasCaption);
+    setSaveStatus('unsaved');
+}
 
 // ── Collect / Populate ────────────────────────────────────
 function collectFormData() {
@@ -816,7 +921,14 @@ function collectFormData() {
             present_phys:ins[8]?.value||'',  present_phys_manual:ins[8]?.dataset.manual||''
         };
     });
-    data._photos=eblPhotos;
+    data._ann1_photos = eblPhotoStores['ebl-ann1'];
+    data._ann2_photos = eblPhotoStores['ebl-ann2'];
+    data._ann3_photos = eblPhotoStores['ebl-ann3'];
+    data._ann4_photos = eblPhotoStores['ebl-ann4'];
+    data._ann5_photos = eblPhotoStores['ebl-ann5'];
+    data._ann6_photos = eblPhotoStores['ebl-ann6'];
+    data._ann7_photos = eblPhotoStores['ebl-ann7'];
+    data._ann8_photos = eblPhotoStores['ebl-ann8'];
     data._formType='ebl-land-building';
     return data;
 }
@@ -884,10 +996,23 @@ function populateFormData(fd) {
             });
         }
     }
-    if(Array.isArray(fd._photos)){
-        eblPhotos=fd._photos.map(p=>({...p,caption:p.caption??p.name.replace(/\.[^/.]+$/,'')}));
-        eblRenderPhotos();
-    }
+    [
+        ['ebl-ann1','ebl-ann1-grid',14,'ebl-ann1-label',true,  '_ann1_photos'],
+        ['ebl-ann2','ebl-ann2-grid', 1,'ebl-ann2-label',true,  '_ann2_photos'],
+        ['ebl-ann3','ebl-ann3-grid', 1,'ebl-ann3-label',true,  '_ann3_photos'],
+        ['ebl-ann4','ebl-ann4-grid', 2,'ebl-ann4-label',true,  '_ann4_photos'],
+        ['ebl-ann5','ebl-ann5-grid', 1,'ebl-ann5-label',false, '_ann5_photos'],
+        ['ebl-ann6','ebl-ann6-grid', 1,'ebl-ann6-label',false, '_ann6_photos'],
+        ['ebl-ann7','ebl-ann7-grid', 1,'ebl-ann7-label',false, '_ann7_photos'],
+        ['ebl-ann8','ebl-ann8-grid', 1,'ebl-ann8-label',true,  '_ann8_photos'],
+    ].forEach(([storeKey, gridId, max, labelId, hasCaption, fdKey]) => {
+        if (Array.isArray(fd[fdKey])) {
+            eblPhotoStores[storeKey] = fd[fdKey].map(p => ({
+                ...p, caption: p.caption ?? p.name.replace(/\.[^/.]+$/, '')
+            }));
+            eblRenderPhotos(gridId, storeKey, max, labelId, hasCaption);
+        }
+    });
     eblCalcValuation();
     eblCalcDepreciation();
     eblCalcBVTotals();
