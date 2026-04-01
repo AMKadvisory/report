@@ -102,7 +102,7 @@ const PDFEngine = {
         const rowH = 6, col1 = 74, col2 = CW - col1 - 4;
         if (y + rowH > CONTENT_BOTTOM) y = this.newPage();
         doc.setDrawColor(0,0,0);
-        doc.setFillColor(240,240,240); doc.rect(ML, y, col1, rowH, 'FD');
+        doc.setFillColor(255,255,255); doc.rect(ML, y, col1, rowH, 'FD');
         doc.setFillColor(255,255,255); doc.rect(ML+col1, y, 4, rowH, 'FD');
         doc.rect(ML+col1+4, y, col2, rowH, 'FD');
         this.bold(10);  doc.text(String(label), ML+1.5, y+4);
@@ -117,7 +117,7 @@ const PDFEngine = {
         const { doc, ML, CW, CONTENT_BOTTOM } = this;
         const rowH = 7, col1 = 74, colonW = 4, boxSz = 3.2;
         if (y + rowH > CONTENT_BOTTOM) y = this.newPage();
-        doc.setDrawColor(0,0,0); doc.setFillColor(240,240,240);
+        doc.setDrawColor(0,0,0); doc.setFillColor(255,255,255);
         doc.rect(ML, y, col1, rowH, 'FD');
         this.bold(10); doc.text(String(rowLabel), ML+1.5, y + rowH/2 + 1.2);
         doc.setFillColor(255,255,255); doc.rect(ML+col1, y, colonW, rowH, 'FD');
@@ -168,7 +168,7 @@ const PDFEngine = {
             try {
                 const fmt = photos[i].dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
                 doc.addImage(photos[i].dataUrl, fmt, imgX, iy, imgW, imgH);
-            } catch(e) { doc.setFillColor(240,240,240); doc.rect(imgX, iy, imgW, imgH, 'FD'); }
+            } catch(e) { doc.setFillColor(255,255,255); doc.rect(imgX, iy, imgW, imgH, 'FD'); }
             doc.setDrawColor(0,0,0); doc.setLineWidth(0.4);
             doc.rect(imgX, iy, imgW, imgH);
             doc.setLineWidth(0.2);
@@ -192,25 +192,28 @@ const PDFEngine = {
         try {
             const fmt = qr.dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
             doc.addImage(qr.dataUrl, fmt, qrX, y, qrSize, qrSize);
-        } catch(e) { doc.setDrawColor(0,0,0); doc.rect(qrX, y, qrSize, qrSize); }
+        } catch(e) { doc.setFillColor(240,240,240); doc.rect(qrX, y, qrSize, qrSize, 'FD'); }
+        doc.setDrawColor(0,0,0); doc.setLineWidth(0.4);
+        doc.rect(qrX, y, qrSize, qrSize);
+        doc.setLineWidth(0.2);
         y += qrSize + 6;
         if (fd.qr_url) {
             this.normal(10);
             doc.text(fd.qr_url, PW/2, y, { align:'center', maxWidth: CW }); y += 8;
         }
-        y += 6;
-        doc.setDrawColor(180,180,180); doc.setLineWidth(0.3);
-        doc.line(ML, y, ML+CW, y); doc.setLineWidth(0.2); doc.setDrawColor(0,0,0);
-        y += 7;
-        this.bold(10); doc.text('Instructions for use:', ML, y); y += 7;
-        this.normal(10);
-        ['Download & install any QR code scanner/reader.',
-         'Scan the attached QR code.',
-         'Open the link using Google chrome/any browser.'
-        ].forEach(line => {
-            doc.circle(ML+1.5, y-1.2, 0.8, 'F');
-            const wrapped = doc.splitTextToSize(line, CW-8);
-            doc.text(wrapped, ML+6, y); y += wrapped.length * 5.5;
+        y += 13;
+
+
+        this.bold(10);
+        doc.text('Instructions for use:', ML + 20, y); y += 6;
+        this.italic(9);
+        ['Download & install any QR Code scanner/reader.',
+         'Scan the attached QR Code.',
+         'Open the link using Google Chrome/any browser.'
+        ].forEach(inst => {
+            doc.circle(ML + 23, y - 1, 0.8, 'F');
+            doc.text(inst, ML + 26, y);
+            y += 5.5;
         });
     },
 
