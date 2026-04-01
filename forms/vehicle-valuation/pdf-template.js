@@ -19,6 +19,29 @@ const VehicleValuationPDF = {
         let y = await E.init('AMK Header.png', 'AKM Footer.png');
         const { doc, PW, ML, CW, CONTENT_BOTTOM } = E;
 
+        // Helper to render section heading with underline 
+        const heading = (y, text) => {
+            if (y + 8 > CONTENT_BOTTOM) y = E.newPage();
+            E.bold(12); doc.text(text, ML, y+5);
+            const textWidth = doc.getTextWidth(text);
+            doc.setLineWidth(0.3); doc.line(ML, y+6.5, ML+textWidth, y+6.5);
+            E.normal(10); return y + 10;
+        };
+
+        const numberedList = (y, items) => {
+            items.forEach((txt, i) => {
+                const prefix = `${i+1}. `;
+                const prefixW = doc.getTextWidth(prefix);
+                const ls = doc.splitTextToSize(txt, CW - 4 - prefixW);
+                if (y + ls.length*4.5 > CONTENT_BOTTOM) y = E.newPage();
+                E.normal(10);
+                doc.text(prefix, ML+2, y);
+                doc.text(ls, ML+2+prefixW, y, { align: 'justify', maxWidth: CW - 4 - prefixW });
+                y += ls.length*4 + 0.5;
+            });
+            return y;
+        };
+
         // ── PAGE 1: COVER ─────────────────────────────────────
         const titleY = 110;
         E.bold(16);
@@ -122,15 +145,20 @@ const VehicleValuationPDF = {
          '2. Annexure-II  : Registration Acknowledgement Slip Verification Report',
          '3. Annexure-III : Photograph of Vehicle',
          '4. Annexure-IV  : QR Code for Video of Vehicle'
-        ].forEach((l, i) => { doc.text(l, ML+16, y + i*5.5); });
+        ].forEach((l, i) => { doc.text(l, ML+16, y + i*4.5); });
 
         // ── PAGE 3: VEHICLE & REGISTRATION ───────────────────
         y = E.newPage();
         E.italic(10); doc.text('Annexure-I', ML+CW, y, { align:'right' }); y += 7;
-        E.bold(12);   doc.text('Detail Report', PW/2, y, { align:'center' }); y += 10;
-        E.normal(10);
+        E.bold(12);
+        doc.text('Detail Report', PW/2, y, { align:'center' });
+        const drW = doc.getTextWidth('Detail Report');
+        doc.setLineWidth(0.3);
+        doc.line(PW/2 - drW/2, y + 1.5, PW/2 + drW/2, y + 1.5);
+        y += 10;
 
-        y = E.sectionBar(y, 'Vehicle Details');
+        E.normal(10);
+        y = heading(y, 'Vehicle Details');
         [['Manufacturing Company',v('manufacturer')],['Trim / Package',v('trim_package')],
          ['Vehicle Model',v('vehicle_model')],['Country of Origin',v('country_of_origin')],
          ['Engine Number',v('engine_number')],['Chassis Number',v('chassis_number')],
@@ -139,9 +167,10 @@ const VehicleValuationPDF = {
         ].forEach(([l,val]) => { y = E.tRow(y,l,val); });
         y = E.checkRow(y, 'Type of Vehicle', bo('vehicle_type', ['Non-Hybrid','Hybrid','Electric']));
         y = E.checkRow(y, 'Fuel Used',       bo('fuel_used',    ['Petrol','Diesel','CNG','Octane','Electric']));
+        y+=10;
 
-        y += 5; if (y+10 > CONTENT_BOTTOM) y = E.newPage();
-        y = E.sectionBar(y, 'Registration Details');
+
+        y = heading(y, 'Registration Details');
         [['Current Owner Name',v('owner_name')],['Registration Number',v('registration_number')],
          ['Registration ID',v('registration_id')],['Registration Date',dt('registration_date')],
          ['Ownership Transfer Status',v('ownership_transfer')],
@@ -155,7 +184,7 @@ const VehicleValuationPDF = {
 
         // ── PAGE 4: INTERIOR INSPECTION ───────────────────────
         y = E.newPage();
-        y = E.sectionBar(y, 'Interior Inspection');
+        y = heading(y, 'Interior Inspection');
         [['Transmission (Gear)','transmission',['Auto','Manual']],
          ['Ignition (Start)','ignition',['Push','Key']],
          ['Power Window','power_window',['Auto','Manual']],
@@ -175,9 +204,10 @@ const VehicleValuationPDF = {
             y = E.tRow(y, 'Accessories Detail', v('interior_accessories'));
         y = E.tRow(y, 'No. of Seats', v('num_seats'));
         y = E.tRow(y, 'Total Mileage (as per Dashboard)', v('total_mileage'));
+        y+=10;
 
-        y += 5; if (y+10 > CONTENT_BOTTOM) y = E.newPage();
-        y = E.sectionBar(y, 'Exterior Inspection');
+
+        y = heading(y, 'Exterior Inspection');
         [['Body Condition','body_condition',['Good','Fair','Moderate','Poor']],
          ['Engine Condition','engine_condition',['Good','Fair','Moderate','Poor']],
          ['Tires Condition','tires_condition',['Good','Fair','Moderate','Poor']],
@@ -202,7 +232,7 @@ const VehicleValuationPDF = {
 
         // ── PAGE 5: ASSESSMENT + DECLARATION ─────────────────
         y = E.newPage();
-        y = E.sectionBar(y, 'Overall Assessment');
+        y = heading(y, 'Overall Assessment');
         [['Interior Condition','interior_condition',['Good','Average','Poor']],
          ['Exterior Condition','exterior_condition',['Good','Average','Poor']],
          ['Any Known Defects','known_defects',['Yes','No']],
@@ -211,8 +241,8 @@ const VehicleValuationPDF = {
         if (kd === 'Yes' || (Array.isArray(kd) && kd.includes('Yes')))
             y = E.tRow(y, 'Known Defects Detail', v('known_defects_detail'));
 
-        y += 5; if (y+10 > CONTENT_BOTTOM) y = E.newPage();
-        y = E.sectionBar(y, 'Inspection Particulars');
+        y += 10; if (y+10 > CONTENT_BOTTOM) y = E.newPage();
+        y = heading(y, 'Inspection Particulars');
         [['Date of Inspection', dt('inspection_date')],
          ['Inspection Time', tm('inspection_time')],
          ['Location', v('inspection_location')],
@@ -220,25 +250,25 @@ const VehicleValuationPDF = {
          ['Name of Verification Agent', v('verification_agent')]
         ].forEach(([l,val]) => { y = E.tRow(y,l,val); });
 
-        y += 6; if (y+10 > CONTENT_BOTTOM) y = E.newPage();
-        y = E.sectionBar(y, 'Declaration');
-        y += 2;
-        E.normal(10);
-        ['The valuation has been performed based on our physical inspection, verification, local market analysis and assessment to the best of our knowledge.',
-         "AMK's responsibility is limited to the valuation of the said vehicle only without considering any legal matter related to the vehicle and documents.",
-         'Except inspection and valuation of the said vehicle, AMK or any of its Officials has no interest directly or indirectly in any manner whatsoever in the subject matter of this report.',
-         "In case of Forced Sale Value, the rate is assumed on the basis of the vehicle's demand, price, marketability and other factors.",
-         'This report is not intended to absolve the concerned parties from their contractual obligations.'
-        ].forEach((d, i) => {
-            const lines = doc.splitTextToSize((i+1)+'. '+d, CW-4);
-            if (y + lines.length*5 > CONTENT_BOTTOM) y = E.newPage();
-            doc.text(lines, ML+2, y); y += lines.length*5+2;
-        });
+        y += 10; if (y+10 > CONTENT_BOTTOM) y = E.newPage();
+        y = heading(y, 'Declaration');
+        y = numberedList(y, [
+            'The valuation has been performed based on our physical inspection, verification, local market analysis and assessment to the best of our knowledge.',
+            "AMK's responsibility is limited to the valuation of the said vehicle only without considering any legal matter related to the vehicle and documents.",
+            'Except inspection and valuation of the said vehicle, AMK or any of its Officials has no interest directly or indirectly in any manner whatsoever in the subject matter of this report.',
+            "In case of Forced Sale Value, the rate is assumed on the basis of the vehicle's demand, price, marketability and other factors.",
+            'This report is not intended to absolve the concerned parties from their contractual obligations.'
+        ]);
 
         // ── PAGE 6: ANNEXURE-II — BRTA Registration ───────────
         y = E.newPage();
         E.italic(10); doc.text('Annexure-II', ML+CW, y, { align:'right' }); y += 7;
-        E.bold(12);   doc.text('Registration Details Report', PW/2, y, { align:'center' }); y += 8;
+        E.bold(12);
+        doc.text('Registration Details Report', PW/2, y, { align:'center' });
+        const drW1 = doc.getTextWidth('Registration Details Report');
+        doc.setLineWidth(0.3);
+        doc.line(PW/2 - drW1/2, y + 1.5, PW/2 + drW1/2, y + 1.5);
+        y += 10;
         E.normal(10);
 
         const rh = 8;
@@ -331,7 +361,16 @@ const VehicleValuationPDF = {
         E.renderQR(fd);
 
         // Save
-        const filename = 'Valuation_'+(v('registration_number')||v('brta_registration_no')||'Report')+'.pdf';
+        // Helper to remove illegal filename characters ( \ / : * ? " < > | )
+        const sanitize = (str) => str ? str.replace(/[\\/:\*\?"<>\|]/g, '-') : '';
+
+        const ref = sanitize(v('letter_ref'));
+        const account = sanitize(v('reference_account_name'));
+
+        // Combine both with a fallback if both are empty
+        const identifier = (ref && account) ? `${ref}_${account}` : (ref || account || 'Report');
+
+        const filename = `INCOMING-${identifier}.pdf`;
         E.save(filename);
     }
 };
