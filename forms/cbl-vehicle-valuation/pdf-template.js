@@ -20,6 +20,13 @@ const CBLVehicleValuationPDF = {
         const tm = (k)        => E.tm(fd, k);
         const bo = (f, opts)  => E.buildOpts(fd, f, opts);
 
+        // Format a plain-digit string with international commas (1,000,000)
+        const fmtNum = (k) => {
+            const raw = (fd[k] || '').toString().replace(/[^\d]/g, '');
+            if (!raw) return '';
+            return parseInt(raw, 10).toLocaleString('en-US');
+        };
+
         // FIX #4: 'AKM Footer.png' was a typo — corrected to 'AMK Footer.png'
         let y = await E.init('AMK Header.png', 'AMK Footer.png');
         const { doc, PW, ML, CW, CONTENT_BOTTOM } = E;
@@ -136,12 +143,12 @@ const CBLVehicleValuationPDF = {
         });
         y += 7;
 
-        // Data row
+        // Data row — assessed_price formatted with commas
         E.normal(9);
         const pmvData = [
             v('purchaser_name'),
             v('cover_registration_number') || v('registration_number'),
-            v('assessed_price'),
+            fmtNum('assessed_price'),
         ];
         let dx2 = ML;
         pmvData.forEach((val, i) => {
@@ -343,7 +350,7 @@ const CBLVehicleValuationPDF = {
          ['Name of Verification Agent',  v('verification_agent')],
         ].forEach(([l,val]) => { y = E.tRow(y,l,val); });
 
-// Price Justification table
+        // Price Justification table
         y += 10; if (y+10 > CONTENT_BOTTOM) y = E.newPage();
         y = heading(y, 'Price Justification:');
 
@@ -362,12 +369,12 @@ const CBLVehicleValuationPDF = {
         });
         y += pjHdrH;
 
-        // Data rows
+        // Data rows — all price values formatted with international commas
         E.normal(9);
         const pjRows = [
-            ['Current Offer Price at Pre-Owned vehicle Showrooms', v('pj_showroom_max'),  v('pj_showroom_assessed')],
-            ['Current Offer Price on the online Marketplace',       v('pj_online_max'),    v('pj_online_assessed')],
-            ['Recent valuation as recorded in our database',        v('pj_database_max'),  v('pj_database_assessed')],
+            ['Current Offer Price at Pre-Owned vehicle Showrooms', fmtNum('pj_showroom_max'),  fmtNum('pj_showroom_assessed')],
+            ['Current Offer Price on the online Marketplace',       fmtNum('pj_online_max'),    fmtNum('pj_online_assessed')],
+            ['Recent valuation as recorded in our database',        fmtNum('pj_database_max'),  fmtNum('pj_database_assessed')],
         ];
         pjRows.forEach(([label, maxVal, assessedVal]) => {
             const ls = doc.splitTextToSize(label, pjCws[0] - 3);
