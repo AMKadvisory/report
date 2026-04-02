@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valuation Form - AMK Portal</title>
+    <title>Valuation Form – AMK Portal</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
         body { background: var(--gray-100); }
@@ -222,18 +222,18 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Manufacturing Year</label>
-                        <input type="text" class="form-control" data-field="cover_manufacturing_year" placeholder="e.g. 2020">
+                        <input type="text" class="form-control" data-field="manufacturing_year" placeholder="e.g. 2020">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Chassis No.</label>
-                        <input type="text" class="form-control" data-field="cover_chassis_number" placeholder="Enter Chassis Number">
+                        <input type="text" class="form-control" data-field="chassis_number" placeholder="Enter Chassis Number">
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Engine No.</label>
-                        <input type="text" class="form-control" data-field="cover_engine_number" placeholder="Enter Engine Number">
+                        <input type="text" class="form-control" data-field="engine_number" placeholder="Enter Engine Number">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Vehicle Purchaser's Name</label>
@@ -244,12 +244,11 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Vehicle Registration No.</label>
-                        <input type="text" class="form-control" data-field="cover_registration_number" placeholder="Enter Registration Number">
+                        <input type="text" class="form-control" data-field="registration_number" placeholder="Enter Registration Number">
                     </div>
                     <div class="form-group">
-                        <!-- FIX #2: Removed stray double-quote before closing > -->
                         <label class="form-label">Assessed Price (BDT)</label>
-                        <input type="text" class="form-control" data-field="assessed_price" placeholder="0">
+                        <input type="text" class="form-control" data-field="assessed_price" placeholder="0" oninput="fmtCurrency(this)">
                     </div>
                 </div>
 
@@ -667,8 +666,8 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════
-//  CBPLC_vehicle.html  —  page-specific logic only
-//  To change PDF layout  → forms/cbl-vehicle-valuation/pdf-template.js
+//  form.html  —  page-specific logic only
+//  To change PDF layout  → forms/vehicle-valuation/pdf-template.js
 //  To change auth        → auth.js
 //  To change DB queries  → core/db.js
 // ═══════════════════════════════════════════════════════════
@@ -729,7 +728,6 @@ document.getElementById('interior-checks').innerHTML = [
     ['Ambient Lighting',     'ambient_lighting',   builtMod],
 ].map(([l,f,o]) => buildCheckRow(l,f,o,true)).join('');
 
-// FIX #5: Added missing 'HID Lights' checkbox to exterior section
 document.getElementById('exterior-checks').innerHTML = [
     ['Body Condition',    'body_condition',   condOpts],
     ['Engine Condition',  'engine_condition', condOpts],
@@ -742,7 +740,6 @@ document.getElementById('exterior-checks').innerHTML = [
     ['Fog Light',         'fog_light',        twoOpts],
     ['Dimension',         'dimension',        ['Long','Hatchback','Saloon','SUV']],
     ['Paint Condition',   'paint_condition',  condOpts],
-    ['HID Lights',        'hid_lights',       condOpts],  // FIX #5: was missing — present in PDF/schema but not form
 ].map(([l,f,o]) => buildCheckRow(l,f,o,true)).join('') +
 `<div class="form-group">
     <label class="form-label">Major Accidental History</label>
@@ -787,16 +784,8 @@ function updateRecipient(sel) {
     if (addr) document.querySelector('[data-field="recipient_address"]').value = addr;
 }
 
-// ── Currency formatting ───────────────────────────────────────
-// FIX #8: fmtCurrency was called but not defined — added implementation
-function fmtCurrency(el) {
-    // Remove all non-digit characters except leading minus
-    let raw = el.value.replace(/[^\d]/g, '');
-    if (!raw) { el.value = ''; return; }
-    // Format with comma separators (Bangladeshi style: 1,00,000)
-    const num = parseInt(raw, 10);
-    el.value = num.toLocaleString('en-IN');
-}
+// ── Currency & FSV ───────────────────────────────────────────
+
 
 // ── Photo upload ─────────────────────────────────────────────
 
@@ -887,40 +876,59 @@ function removeQR() {
     setSaveStatus('unsaved');
 }
 
+// ── Currency formatting ───────────────────────────────────────
+const CURRENCY_FIELDS = ['assessed_price','pj_showroom_max','pj_showroom_assessed','pj_online_max','pj_online_assessed','pj_database_max','pj_database_assessed'];
+
+function fmtCurrency(el) {
+    const raw = el.value.replace(/[^\d]/g, '');
+    if (!raw) { el.value = ''; return; }
+    el.value = parseInt(raw, 10).toLocaleString('en-US');
+}
+
+function parseCurrency(str) {
+    return str ? str.replace(/[^\d]/g, '') : '';
+}
+
 // ── Collect / populate ───────────────────────────────────────
 function collectFormData() {
     const data = {};
-    document.querySelectorAll('[data-field]').forEach(el => { data[el.dataset.field] = el.value; });
+    document.querySelectorAll('[data-field]').forEach(el => {
+        // Store currency fields as plain digits (no commas) for clean PDF rendering
+        data[el.dataset.field] = CURRENCY_FIELDS.includes(el.dataset.field)
+            ? parseCurrency(el.value)
+            : el.value;
+    });
     document.querySelectorAll('[data-checkbox-group]').forEach(g => {
         data[g.dataset.checkboxGroup] = [...g.querySelectorAll('.pill.checked')].map(p => p.dataset.value);
     });
     data._cover_image = uploadedCoverImage;
-    data._photos   = uploadedPhotos;
-    data._qr       = uploadedQR;
-    data._formType = 'cbplc-vehicle-valuation';
+    data._photos      = uploadedPhotos;
+    data._qr          = uploadedQR;
+    data._ownerCount  = ownerCount;
+    data._formType    = 'cbplc-vehicle-valuation';
     return data;
 }
 
 function populateFormData(data) {
     if (!data) return;
 
-    // ── Migration: old drafts stored cover fields under the plain key
-    //    (e.g. manufacturing_year). If the cover_ key is absent, copy the
-    //    plain value over so the Cover section is correctly restored.
-    const coverMigrationMap = {
-        cover_manufacturing_year:   'manufacturing_year',
-        cover_chassis_number:       'chassis_number',
-        cover_engine_number:        'engine_number',
-        cover_registration_number:  'registration_number',
-    };
-    Object.entries(coverMigrationMap).forEach(([coverKey, plainKey]) => {
-        if ((data[coverKey] === undefined || data[coverKey] === '') && data[plainKey]) {
-            data[coverKey] = data[plainKey];
-        }
+    // Restore dynamic owner rows first (beyond the first static row)
+    let maxOwner = 1;
+    Object.keys(data).forEach(k => {
+        const m = k.match(/^owner_(\d+)_/);
+        if (m) maxOwner = Math.max(maxOwner, parseInt(m[1]));
     });
+    for (let i = ownerCount + 1; i <= maxOwner; i++) { addOwnerRow(); }
 
     document.querySelectorAll('[data-field]').forEach(el => {
-        if (data[el.dataset.field] !== undefined) el.value = data[el.dataset.field];
+        if (data[el.dataset.field] === undefined) return;
+        if (CURRENCY_FIELDS.includes(el.dataset.field)) {
+            // Re-apply comma formatting when loading saved plain-digit values
+            const raw = data[el.dataset.field].replace(/[^\d]/g, '');
+            el.value = raw ? parseInt(raw, 10).toLocaleString('en-US') : '';
+        } else {
+            el.value = data[el.dataset.field];
+        }
     });
     document.querySelectorAll('[data-checkbox-group]').forEach(g => {
         const saved = data[g.dataset.checkboxGroup];
@@ -929,6 +937,11 @@ function populateFormData(data) {
         const tid = g.dataset.toggleTarget;
         if (tid) { const box = document.getElementById(tid); if (box) box.style.display = saved.includes('Yes') ? 'block' : 'none'; }
     });
+    // Restore accidental history detail visibility (inline onclick, no data-toggle-target)
+    if (Array.isArray(data.accidental_history) && data.accidental_history.includes('Yes')) {
+        const box = document.getElementById('accidental-detail');
+        if (box) box.style.display = 'block';
+    }
     if (data._cover_image) {
         uploadedCoverImage = data._cover_image;
         document.getElementById('cover-img-tag').src = data._cover_image.dataUrl;
@@ -961,9 +974,9 @@ function setSaveStatus(status) {
 
 // ── Cross-Check Validation ──────────────────────────────────
 const CROSS_CHECK_MAP = [
-    { label: "Engine Number", fields: ["cover_engine_number", "engine_number", "brta_engine_no"] },
-    { label: "Chassis Number", fields: ["cover_chassis_number", "chassis_number", "brta_chassis_no"] },
-    { label: "Registration Number", fields: ["cover_registration_number", "registration_number", "brta_registration_no"] },
+    { label: "Engine Number", fields: ["engine_number", "brta_engine_no"] },
+    { label: "Chassis Number", fields: ["chassis_number", "brta_chassis_no"] },
+    { label: "Registration Number", fields: ["registration_number", "brta_registration_no"] },
     { label: "Registration ID", fields: ["registration_id", "brta_registration_id"] }
 ];
 
@@ -1013,9 +1026,6 @@ function performCrossCheck() {
 // ── Main ─────────────────────────────────────────────────────
 let currentUserId = null, currentSubmissionId = null;
 
-// FIX #3: Encode space in filename for history.replaceState URLs
-const FORM_URL = 'CBPLC%20vehicle.html';
-
 async function init() {
     const session = await Auth.requireAuth();
     if (!session) return;
@@ -1039,7 +1049,9 @@ async function init() {
         } catch(err) { UI.showToast('Failed to load: ' + err.message, 'error'); }
     }
     document.addEventListener('input', () => setSaveStatus('unsaved'));
+    document.addEventListener('change', () => setSaveStatus('unsaved'));
     document.addEventListener('change', (e) => {
+        // Keep the save status update
         setSaveStatus('unsaved');
         
         // Trigger cross-check ONLY when the user finished typing and clicks away
@@ -1067,18 +1079,18 @@ async function saveDraft() {
         }
         if (result.error) throw result.error;
         currentSubmissionId = result.data.id;
-        // FIX #3: Use URL-encoded filename to avoid broken URL from space
-        history.replaceState({}, '', `${FORM_URL}?id=${currentSubmissionId}`);
+        history.replaceState({}, '', `CBPLC%20vehicle.html?id=${currentSubmissionId}`);
         setSaveStatus('saved');
         UI.showToast('Draft saved', 'success', 2000);
     } catch(err) { setSaveStatus('unsaved'); UI.showToast('Save failed: ' + err.message, 'error'); }
 }
 
 async function submitReport() {
+    // Add this check at the very beginning
     const watchedFields = CROSS_CHECK_MAP.flatMap(g => g.fields);
     const hasMismatch = watchedFields.some(f => {
         const el = document.querySelector(`[data-field="${f}"]`);
-        return el && el.style.borderColor === 'var(--danger)';
+        return el && el.style.borderColor === 'var(--danger)'; // Check for the red border
     });
 
     if (hasMismatch) {
@@ -1100,9 +1112,7 @@ async function submitReport() {
         }
         if (result.error) throw result.error;
         currentSubmissionId = result.data.id;
-        // FIX #3: Use URL-encoded filename to avoid broken URL from space
-        history.replaceState({}, '', `${FORM_URL}?id=${currentSubmissionId}`);
-        // FIX #1: 'badge' was undefined — must be fetched from the DOM here
+        history.replaceState({}, '', `CBPLC%20vehicle.html?id=${currentSubmissionId}`);
         const badge = document.getElementById('status-indicator');
         badge.style.display = 'inline-flex';
         badge.className = 'status-badge status-submitted';
