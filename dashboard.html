@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard – AMK Valuation Portal</title>
+    <title>Dashboard - AMK Valuation Portal</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
         .welcome-banner { background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%); border-radius: var(--radius-lg); padding: 2rem 2.5rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; }
@@ -57,6 +57,8 @@
             <button class="btn btn-primary btn-lg" onclick="toggleNewMenu()">+ New Report ▾</button>
             <div id="new-report-dropdown" style="display:none;position:absolute;right:0;top:110%;background:white;border:1px solid var(--gray-200);border-radius:var(--radius-md);box-shadow:var(--shadow-md);min-width:220px;z-index:100;overflow:hidden;">
                 <a href="form.html"                   style="display:block;padding:0.75rem 1.25rem;font-size:0.875rem;color:var(--navy);text-decoration:none;transition:background var(--transition);" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='white'">🚗 BBPLC Vehicle Valuation</a>
+                <!-- FIX #3 (dashboard link): href uses %20 to safely encode the space in the filename -->
+                <a href="cbplc-vehicle.html"        style="display:block;padding:0.75rem 1.25rem;font-size:0.875rem;color:var(--navy);text-decoration:none;transition:background var(--transition);" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='white'">🚗 CBPLC Vehicle Valuation</a>
                 <a href="property-form.html"          style="display:block;padding:0.75rem 1.25rem;font-size:0.875rem;color:var(--navy);text-decoration:none;transition:background var(--transition);" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='white'">🏠 EBL SME Land &amp; Building</a>
                 <a href="ebl-land-building-form.html" style="display:block;padding:0.75rem 1.25rem;font-size:0.875rem;color:var(--navy);text-decoration:none;transition:background var(--transition);" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='white'">🏗️ EBL Land &amp; Building</a>
             </div>
@@ -90,6 +92,25 @@
         </div>
     </div>
 
+    <!-- CBPLC Vehicle Valuation Section -->
+    <div class="submissions-table-wrapper">
+        <div class="table-section-header">
+            <div class="table-section-title">
+                🚗 CBPLC Vehicle Valuation
+                <span class="table-section-count" id="count-cbplc">0</span>
+            </div>
+            <div class="section-filter-tabs">
+                <button class="section-filter-tab active" onclick="filterSection('cbplc','all',this)">All</button>
+                <button class="section-filter-tab" onclick="filterSection('cbplc','draft',this)">Drafts</button>
+                <button class="section-filter-tab" onclick="filterSection('cbplc','submitted',this)">Submitted</button>
+                <button class="section-filter-tab" onclick="filterSection('cbplc','reviewed',this)">Reviewed</button>
+            </div>
+        </div>
+        <div id="table-cbplc">
+            <div class="empty-table">Loading...</div>
+        </div>
+    </div>
+
     <!-- EBL SME Property Valuation Section -->
     <div class="submissions-table-wrapper">
         <div class="table-section-header">
@@ -109,11 +130,11 @@
         </div>
     </div>
 
-    <!-- EBL Land & Building Section -->
+    <!-- EBL HL Land & Building Section -->
     <div class="submissions-table-wrapper">
         <div class="table-section-header">
             <div class="table-section-title">
-                🏗️ EBL Land &amp; Building
+                🏠 EBL HL Land &amp; Building
                 <span class="table-section-count" id="count-ebl">0</span>
             </div>
             <div class="section-filter-tabs">
@@ -141,12 +162,13 @@
 <script src="forms/vehicle-valuation/pdf-template.js"></script>
 <script src="forms/property-valuation/pdf-template.js"></script>
 <script src="forms/ebl-land-building/pdf-template.js"></script>
+<script src="forms/cbl-vehicle-valuation/pdf-template.js"></script>
 
 <script>
 let currentUserId = null;
 let allSubmissions = [];
 // Track active filter per section
-const sectionFilters = { vehicle: 'all', property: 'all', ebl: 'all' };
+const sectionFilters = { vehicle: 'all', cbplc: 'all', property: 'all', ebl: 'all' };
 
 async function init() {
     const session = await Auth.requireAuth();
@@ -161,7 +183,7 @@ async function init() {
 }
 
 async function loadSubmissions() {
-    ['table-vehicle','table-property','table-ebl'].forEach(id => {
+    ['table-vehicle','table-cbplc','table-property','table-ebl'].forEach(id => {
         document.getElementById(id).innerHTML = '<div class="empty-table">Loading...</div>';
     });
     try {
@@ -170,7 +192,7 @@ async function loadSubmissions() {
         allSubmissions = data;
         renderAllSections();
     } catch(err) {
-        ['table-vehicle','table-property','table-ebl'].forEach(id => {
+        ['table-vehicle','table-cbplc','table-property','table-ebl'].forEach(id => {
             document.getElementById(id).innerHTML = `<div class="empty-table" style="color:var(--danger);">Failed to load: ${err.message}</div>`;
         });
     }
@@ -178,24 +200,27 @@ async function loadSubmissions() {
 
 function getFormType(sub) {
     const fd = sub.form_data || {};
-    const type = fd._formType || sub.form_type || 'vehicle-valuation';
+    const type = fd._formType || sub.form_type || 'cbplc-vehicle-valuation';
     if (type === 'ebl-land-building') return 'ebl';
     if (type === 'property-valuation') return 'property';
+    if (type === 'cbplc-vehicle-valuation') return 'cbplc';
     return 'vehicle';
 }
 
 function renderAllSections() {
-    const grouped = { vehicle: [], property: [], ebl: [] };
+    const grouped = { vehicle: [], cbplc: [], property: [], ebl: [] };
     allSubmissions.forEach(sub => {
         const t = getFormType(sub);
         grouped[t].push(sub);
     });
 
     document.getElementById('count-vehicle').textContent  = grouped.vehicle.length;
+    document.getElementById('count-cbplc').textContent    = grouped.cbplc.length;
     document.getElementById('count-property').textContent = grouped.property.length;
     document.getElementById('count-ebl').textContent      = grouped.ebl.length;
 
     renderTable('vehicle',  grouped.vehicle,  sectionFilters.vehicle);
+    renderTable('cbplc',    grouped.cbplc,    sectionFilters.cbplc);
     renderTable('property', grouped.property, sectionFilters.property);
     renderTable('ebl',      grouped.ebl,      sectionFilters.ebl);
 }
@@ -206,7 +231,7 @@ function filterSection(section, status, btn) {
     parent.querySelectorAll('.section-filter-tab').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
-    const grouped = { vehicle: [], property: [], ebl: [] };
+    const grouped = { vehicle: [], cbplc: [], property: [], ebl: [] };
     allSubmissions.forEach(sub => {
         const t = getFormType(sub);
         grouped[t].push(sub);
@@ -224,9 +249,14 @@ function renderTable(section, list, statusFilter) {
         return;
     }
 
-    const isVehicle  = section === 'vehicle';
+    const isVehicle  = section === 'vehicle' || section === 'cbplc';
     const isEBL      = section === 'ebl';
-    const formUrl    = isEBL ? 'ebl-land-building-form.html' : isVehicle ? 'form.html' : 'property-form.html';
+
+    // FIX #3 (dashboard): Use URL-encoded href for CBPLC form link (space → %20)
+    const formUrl    = isEBL ? 'ebl-land-building-form.html'
+                     : (section === 'cbplc') ? 'cbplc-vehicle.html'
+                     : isVehicle ? 'form.html'
+                     : 'property-form.html';
 
     const rows = filtered.map(sub => {
         const fd      = sub.form_data || {};
@@ -235,7 +265,14 @@ function renderTable(section, list, statusFilter) {
         const sl      = sub.status.charAt(0).toUpperCase() + sub.status.slice(1);
 
         let fileRef, refNo, accountName;
-        if (isVehicle) {
+
+        if (section === 'cbplc') {
+            // FIX #7: CBPLC form uses letter_ref and ac_title — not reference_account_name/referred_by
+            //         which are BBPLC-specific fields and will always be blank for CBPLC submissions.
+            fileRef     = fd.letter_ref || '—';
+            refNo       = fd.letter_ref || '—';
+            accountName = fd.ac_title   || '—';
+        } else if (isVehicle) {
             fileRef     = fd.file_reference_number || fd.letter_ref || '—';
             refNo       = fd.letter_ref || '—';
             accountName = fd.reference_account_name || fd.referred_by || '—';
@@ -267,7 +304,10 @@ function renderTable(section, list, statusFilter) {
 
     const colLabel = isVehicle ? 'File Ref.' : 'Report';
     const col2     = isVehicle ? 'Letter Ref.' : 'Reference No.';
-    const col3     = isVehicle ? 'Referred By' : 'Account Name';
+    // FIX #7: CBPLC shows "A/C Title" instead of generic "Referred By"
+    const col3     = (section === 'cbplc') ? 'A/C Title'
+                   : isVehicle ? 'Referred By'
+                   : 'Account Name';
 
     container.innerHTML = `
         <table class="submissions-table">
@@ -297,6 +337,8 @@ async function downloadReport(id, section) {
             await PDFEngine.generate(formData, PropertyValuationPDF);
         } else if (section === 'ebl') {
             await PDFEngine.generate(formData, EBLLandBuildingPDF);
+        } else if (section === 'cbplc') {
+            await PDFEngine.generate(formData, CBLVehicleValuationPDF);
         } else {
             await PDFEngine.generate(formData, VehicleValuationPDF);
         }
