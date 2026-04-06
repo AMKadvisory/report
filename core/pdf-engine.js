@@ -187,7 +187,7 @@ const PDFEngine = {
         this.bold(12);
         doc.text('Annexure-IV: QR Code for Video of Vehicle', PW/2, y+5, { align:'center' }); y += 14;
         this.bold(10);
-        doc.text(this.v(fd,'qr_label','Document QR Code'), PW/2, y, { align:'center' }); y += 10;
+        // doc.text(this.v(fd,'qr_label','Document QR Code'), PW/2, y, { align:'center' }); y += 10;
         const qrSize = 60, qrX = (PW - qrSize) / 2;
         try {
             const fmt = qr.dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
