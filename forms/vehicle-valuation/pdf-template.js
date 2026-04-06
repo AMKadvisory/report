@@ -43,13 +43,13 @@ const VehicleValuationPDF = {
         };
 
         // ── PAGE 1: COVER ─────────────────────────────────────
-        const titleY = 110;
+        const titleY = 80;
         E.bold(16);
         doc.text('INSPECTION & VALUATION REPORT OF', PW/2, titleY, { align:'center' });
         doc.text('USED/PRE-OWNED VEHICLE', PW/2, titleY+10, { align:'center' });
 
         // Reference fields — centered block
-        let ry = titleY + 30;
+        let ry = titleY + 50;
         const refLabelW = 52, refColonW = 4;
         const refStartX = (PW - refLabelW - refColonW - 60) / 2;
         [
