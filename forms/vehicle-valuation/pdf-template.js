@@ -11,9 +11,22 @@ const VehicleValuationPDF = {
         const fd = formData || {};
         // Shorthand helpers that close over fd
         const v  = (k, fb='') => E.v(fd, k, fb);
-        const dt = (k)        => E.dt(fd, k);
         const tm = (k)        => E.tm(fd, k);
         const bo = (f, opts)  => E.buildOpts(fd, f, opts);
+        const dt = (k) => {
+            const raw = fd[k];
+            if (!raw) return '';
+            const d = new Date(raw);
+            if (isNaN(d)) return raw;
+            return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+        };
+        const dts = (k) => {
+            const raw = fd[k];
+            if (!raw) return '';
+            const d = new Date(raw);
+            if (isNaN(d)) return raw;
+            return d.toLocaleDateString('en-GB'); // gives DD/MM/YYYY
+        };
 
         // Initialise document — returns starting y (MT)
         let y = await E.init('AMK Header.png', 'AKM Footer.png');
@@ -71,8 +84,8 @@ const VehicleValuationPDF = {
         const addrL      = doc.splitTextToSize(v('recipient_address'), CW/2-14);
         const boxH = Math.max(40, 14 + Math.max(6, rNameLines.length + addrL.length) * 5.5);
         doc.setDrawColor(0,0,0); doc.setFillColor(255,255,255);
-        doc.rect(ML, boxTop, CW/2-2, boxH, 'FD');
-        doc.rect(ML+CW/2+2, boxTop, CW/2-2, boxH, 'FD');
+        doc.rect(ML, boxTop, CW/2, boxH, 'FD');
+        doc.rect(ML+CW/2, boxTop, CW/2-2, boxH, 'FD');
 
         let by = boxTop + 6;
         E.bold(10);  doc.text('Submitted by:', ML+3, by); by += 6;
@@ -134,7 +147,7 @@ const VehicleValuationPDF = {
         doc.text(c2L, ML, y); y += c2L.length*5+10;
         doc.text('With best regards,', ML, y); y += 24;
         doc.setDrawColor(0,0,0);
-        doc.line(ML, y, ML+78, y); doc.line(ML+100, y, ML+178, y); y += 5;
+        doc.line(ML, y, ML+50, y); doc.line(ML+100, y, ML+150, y); y += 5;
         E.bold(10);
         doc.text(v('valuer_1_name'), ML, y); doc.text(v('valuer_2_name'), ML+100, y); y += 6;
         E.normal(10);
@@ -153,7 +166,7 @@ const VehicleValuationPDF = {
         E.bold(12);
         doc.text('Detail Report', PW/2, y, { align:'center' });
         const drW = doc.getTextWidth('Detail Report');
-        doc.setLineWidth(0.3);
+        doc.setLineWidth(0.2);
         doc.line(PW/2 - drW/2, y + 1.5, PW/2 + drW/2, y + 1.5);
         y += 10;
 
@@ -172,13 +185,13 @@ const VehicleValuationPDF = {
 
         y = heading(y, 'Registration Details');
         [['Current Owner Name',v('owner_name')],['Registration Number',v('registration_number')],
-         ['Registration ID',v('registration_id')],['Registration Date',dt('registration_date')],
+         ['Registration ID',v('registration_id')],['Registration Date',dts('registration_date')],
          ['Ownership Transfer Status',v('ownership_transfer')],
          ['Insurance Policy Number & Date',v('insurance_policy')],
          ['Tax Clearance Certificate Number',v('tax_clearance_number')],
-         ['Tax Clearance Up To',dt('tax_clearance_date')],
+         ['Tax Clearance Up To',dts('tax_clearance_date')],
          ['Fitness Certificate Number',v('fitness_cert_number')],
-         ['Fitness Validity Up To',dt('fitness_validity')]
+         ['Fitness Validity Up To',dts('fitness_validity')]
         ].forEach(([l,val]) => { y = E.tRow(y,l,val); });
         y = E.checkRow(y, 'Hire Purchase', bo('hire_purchase', ['Yes','No']));
 
@@ -251,7 +264,7 @@ const VehicleValuationPDF = {
         ].forEach(([l,val]) => { y = E.tRow(y,l,val); });
 
         y += 10; if (y+10 > CONTENT_BOTTOM) y = E.newPage();
-        y = heading(y, 'Declaration');
+        y = heading(y, 'Declaration');y += 5;
         y = numberedList(y, [
             'The valuation has been performed based on our physical inspection, verification, local market analysis and assessment to the best of our knowledge.',
             "AMK's responsibility is limited to the valuation of the said vehicle only without considering any legal matter related to the vehicle and documents.",
@@ -266,7 +279,7 @@ const VehicleValuationPDF = {
         E.bold(12);
         doc.text('Registration Details Report', PW/2, y, { align:'center' });
         const drW1 = doc.getTextWidth('Registration Details Report');
-        doc.setLineWidth(0.3);
+        doc.setLineWidth(0.2);
         doc.line(PW/2 - drW1/2, y + 1.5, PW/2 + drW1/2, y + 1.5);
         y += 10;
         E.normal(10);
@@ -320,7 +333,7 @@ const VehicleValuationPDF = {
         y += rh;
 
         y += row3b(LW1,[['Registration\nId',v('brta_registration_id')],['Registration\nNo',v('brta_registration_no')],['Previous\nReg No',v('brta_prev_reg_no')]],rh*2);
-        y += row3b(LW1,[['Application\nStatus',v('brta_app_status')],['Registration\nDate',dt('brta_reg_date')],['Hire',v('brta_hire')]],rh*2);
+        y += row3b(LW1,[['Application\nStatus',v('brta_app_status')],['Registration\nDate',dts('brta_reg_date')],['Hire',v('brta_hire')]],rh*2);
         y += row3b(LW1,[['Ownership\nType',v('brta_ownership_type')],['Hire\nPurchase',v('brta_hire_purchase')],['Bank Name',v('brta_bank_name')]],rh*2);
 
         const baLines = doc.splitTextToSize(v('brta_bank_address')||'', CW-LW1-2);
