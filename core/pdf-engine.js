@@ -11,7 +11,7 @@ const PDFEngine = {
     PW: 210, PH: 297,
     IMG_H: 22,
     MT: 30, MB: 20,
-    ML: 16, MR: 16,
+    ML: 25, MR: 25,
     get CW() { return this.PW - this.ML - this.MR; },
     get CONTENT_BOTTOM() { return this.PH - this.MB; },
 
@@ -99,7 +99,7 @@ const PDFEngine = {
     // ── Standard label:value row (2-column) ──────────────────
     tRow(y, label, value) {
         const { doc, ML, CW, CONTENT_BOTTOM } = this;
-        const rowH = 6, col1 = 74, col2 = CW - col1 - 4;
+        const rowH = 6, col1 = 60, col2 = CW - col1 - 4;
         if (y + rowH > CONTENT_BOTTOM) y = this.newPage();
         doc.setDrawColor(0,0,0);
         doc.setFillColor(255,255,255); doc.rect(ML, y, col1, rowH, 'FD');
@@ -115,7 +115,7 @@ const PDFEngine = {
     // ── Checkbox row with tick marks ─────────────────────────
     checkRow(y, rowLabel, options) {
         const { doc, ML, CW, CONTENT_BOTTOM } = this;
-        const rowH = 7, col1 = 74, colonW = 4, boxSz = 3.2;
+        const rowH = 7, col1 = 60, colonW = 4, boxSz = 3.2;
         if (y + rowH > CONTENT_BOTTOM) y = this.newPage();
         doc.setDrawColor(0,0,0); doc.setFillColor(255,255,255);
         doc.rect(ML, y, col1, rowH, 'FD');
@@ -206,7 +206,7 @@ const PDFEngine = {
 
         this.bold(10);
         doc.text('Instructions for use:', ML + 20, y); y += 6;
-        this.italic(9);
+        this.normal(10);
         ['Download & install any QR Code scanner/reader.',
          'Scan the attached QR Code.',
          'Open the link using Google Chrome/any browser.'
