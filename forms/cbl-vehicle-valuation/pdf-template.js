@@ -16,9 +16,22 @@ const CBLVehicleValuationPDF = {
     async render(formData, E) {
         const fd = formData || {};
         const v  = (k, fb='') => E.v(fd, k, fb);
-        const dt = (k)        => E.dt(fd, k);
         const tm = (k)        => E.tm(fd, k);
         const bo = (f, opts)  => E.buildOpts(fd, f, opts);
+        const dt = (k) => {
+            const raw = fd[k];
+            if (!raw) return '';
+            const d = new Date(raw);
+            if (isNaN(d)) return raw;
+            return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+        };
+        const dts = (k) => {
+            const raw = fd[k];
+            if (!raw) return '';
+            const d = new Date(raw);
+            if (isNaN(d)) return raw;
+            return d.toLocaleDateString('en-GB'); // gives DD/MM/YYYY
+        };
 
         // Format a plain-digit string with international commas (1,000,000)
         const fmtNum = (k) => {
@@ -209,15 +222,18 @@ const CBLVehicleValuationPDF = {
 
         // Signatures
         doc.setDrawColor(0,0,0);
-        doc.line(ML, y, ML+78, y);
-        doc.line(ML+100, y, ML+178, y);
+        doc.line(ML, y, ML+50, y);
+        doc.line(ML+100, y, ML+150, y); 
         y += 5;
+
         E.bold(10);
-        doc.text(v('valuer_1_name'), ML,     y);
-        doc.text(v('valuer_2_name'), ML+100, y); y += 5;
+        doc.text(v('valuer_1_name'), ML, y); 
+        doc.text(v('valuer_2_name'), ML+100, y); 
+        y += 6;
         E.normal(10);
-        doc.text(v('valuer_1_designation'), ML,     y);
-        doc.text(v('valuer_2_designation'), ML+100, y); y += 10;
+        doc.text(v('valuer_1_designation'), ML, y); 
+        doc.text(v('valuer_2_designation'), ML+100, y); 
+        y += 12;
 
         // FIX #9: Added page overflow guard before rendering enclosures list
         const enclosures = [
@@ -264,13 +280,13 @@ const CBLVehicleValuationPDF = {
         [['Current Owner Name',                 v('owner_name')],
          ['Registration Number',                v('registration_number')],
          ['Registration ID',                    v('registration_id')],
-         ['Registration Date',                  dt('registration_date')],
+         ['Registration Date',                  dts('registration_date')],
          ['Ownership Transfer Status',           v('ownership_transfer')],
          ['Insurance Policy Number & Date',      v('insurance_policy')],
          ['Tax Clearance Certificate Number',    v('tax_clearance_number')],
-         ['Tax Clearance Up To',                 dt('tax_clearance_date')],
+         ['Tax Clearance Up To',                 dts('tax_clearance_date')],
          ['Fitness Certificate Number',          v('fitness_cert_number')],
-         ['Fitness Validity Up To',              dt('fitness_validity')],
+         ['Fitness Validity Up To',              dts('fitness_validity')],
         ].forEach(([l,val]) => { y = E.tRow(y,l,val); });
         y = E.checkRow(y, 'Hire Purchase', bo('hire_purchase', ['Yes','No']));
 
@@ -350,46 +366,59 @@ const CBLVehicleValuationPDF = {
          ['Name of Verification Agent',  v('verification_agent')],
         ].forEach(([l,val]) => { y = E.tRow(y,l,val); });
 
-        // Price Justification table
+// Price Justification table
         y += 10; if (y+10 > CONTENT_BOTTOM) y = E.newPage();
         y = heading(y, 'Price Justification:');
 
         // Table header
-        const pjCws = [CW - 55 - 55, 55, 55];
+        const pjCws = [CW - 40 - 40, 40, 40];
         doc.setDrawColor(0,0,0); doc.setLineWidth(0.3);
         E.bold(9);
         const pjHeaders = ['Particulars', 'Maximum Price\n(BDT)', 'Final/Assessed\nPrice (BDT)'];
-        const pjHdrH = 14; // fixed header height — enough for 2-line headers
+        const pjHdrH = 12;
         let pjx = ML;
         pjHeaders.forEach((h, i) => {
-            const ls = doc.splitTextToSize(h, pjCws[i] - 3);
+            const ls = h.split('\n');
+            const lineH = 4.5;
+            const totalTextH = ls.length * lineH;
+            const startY = y + (pjHdrH - totalTextH) / 2 + lineH / 2;
             doc.rect(pjx, y, pjCws[i], pjHdrH);
-            doc.text(ls, pjx + pjCws[i] / 2, y + pjHdrH / 2, { align: 'center', baseline: 'middle' });
+            ls.forEach((line, li) => {
+                doc.text(line, pjx + pjCws[i] / 2, startY + li * lineH, { align: 'center', baseline: 'middle' });
+            });
             pjx += pjCws[i];
         });
         y += pjHdrH;
 
-        // Data rows — all price values formatted with international commas
+        // Data rows
         E.normal(9);
         const pjRows = [
             ['Current Offer Price at Pre-Owned vehicle Showrooms', fmtNum('pj_showroom_max'),  fmtNum('pj_showroom_assessed')],
             ['Current Offer Price on the online Marketplace',       fmtNum('pj_online_max'),    fmtNum('pj_online_assessed')],
             ['Recent valuation as recorded in our database',        fmtNum('pj_database_max'),  fmtNum('pj_database_assessed')],
         ];
+        const pjPadX = 2;
+        const pjPadY = 2;
+        const pjLineH = 4.5;
         pjRows.forEach(([label, maxVal, assessedVal]) => {
-            const ls = doc.splitTextToSize(label, pjCws[0] - 3);
-            const rh2 = Math.max(10, ls.length * 5 + 4); // enough padding around wrapped lines
+            const ls = doc.splitTextToSize(label, pjCws[0] - pjPadX * 2);
+            const textBlockH = ls.length * pjLineH;
+            const rh2 = textBlockH + pjPadY * 2;
             if (y + rh2 > CONTENT_BOTTOM) y = E.newPage();
             doc.setDrawColor(0,0,0); doc.setLineWidth(0.3);
-            // Particulars cell — text vertically centered
+
+            // Particulars cell — left aligned, vertically centered
             doc.rect(ML, y, pjCws[0], rh2);
-            doc.text(ls, ML + 2, y + rh2 / 2, { baseline: 'middle' });
-            // Max Price cell
+            doc.text(ls, ML + pjPadX, y + rh2 / 2, { baseline: 'middle' });
+
+            // Max Price cell — center aligned both axes
             doc.rect(ML + pjCws[0], y, pjCws[1], rh2);
             doc.text(String(maxVal||''), ML + pjCws[0] + pjCws[1] / 2, y + rh2 / 2, { align: 'center', baseline: 'middle' });
-            // Assessed Price cell
+
+            // Assessed Price cell — center aligned both axes
             doc.rect(ML + pjCws[0] + pjCws[1], y, pjCws[2], rh2);
             doc.text(String(assessedVal||''), ML + pjCws[0] + pjCws[1] + pjCws[2] / 2, y + rh2 / 2, { align: 'center', baseline: 'middle' });
+
             y += rh2;
         });
         y += 6;
@@ -399,13 +428,13 @@ const CBLVehicleValuationPDF = {
         const pjPara = 'We have assessed the price of the vehicle based on the vehicle\'s condition as per inspection and considered current market demand for such vehicle in addition to above price discovery.';
         const pjParaL = doc.splitTextToSize(pjPara, CW);
         if (y + pjParaL.length*4.5 > CONTENT_BOTTOM) y = E.newPage();
-        doc.text(pjParaL, ML, y); y += pjParaL.length*4.5 + 8;
+        doc.text(pjParaL, ML, y); y += pjParaL.length*4.5 + 0;
 
         // Declaration
-        if (y + 20 > CONTENT_BOTTOM) y = E.newPage();
+        if (y + 10 > CONTENT_BOTTOM) y = E.newPage();
         y = heading(y, 'Declaration:');
         y = numberedList(y, [
-            'The valuation has been performed based on our physical inspection, verification, local market analysis and assessment to the best of our knowledge and all the information provided in this report is based on the vehicle related documents, other necessary documents and information as provided by concern Bank/NBFI/Officials/Vehicle Owner/Borrower/Individual.',
+            'The valuation has been performed based on our physical inspection, verification, local market analysis and assessment to the best of our knowledge and all the information provided in this report is based on the vehicle related documents, other necessary documents and information as provided by concern Bank/ NBFI/ Officials/ Vehicle Owner/ Borrower/ Individual.',
             'AMK\'s responsibility is limited to the valuation of the said vehicle only without considering any legal matter related to the vehicle and documents as well.',
             'Except inspection and valuation of the said vehicle, AMK or any of its Official has no interest directly or indirectly, at present or in future in any manner whatsoever in the subject matter of this report.',
             'In case of Forced Sale Value, the rate is assumed on the basis of the vehicle\'s demand, price, marketability and other factors, which may have relation to unforeseen or uncontrollable event that drives to sell the vehicle within a short duration.',
@@ -422,93 +451,156 @@ const CBLVehicleValuationPDF = {
         doc.text('Registration Details Report', PW/2, y, { align:'center' });
         const drW1 = doc.getTextWidth('Registration Details Report');
         doc.setLineWidth(0.3);
-        doc.line(PW/2 - drW1/2, y+1.5, PW/2 + drW1/2, y+1.5);
+        doc.line(PW/2 - drW1/2, y + 1.5, PW/2 + drW1/2, y + 1.5);
         y += 10;
         E.normal(10);
 
-        const rh = 8;
-        const C3 = Math.floor(CW/3), C3r = CW - C3*2;
+        // ─── TABLE DRAWING HELPERS ───────────────────────────────────
         const FS = 9;
-        doc.setFontSize(FS);
+        const COL = CW / 8; // width of one column unit
 
-        const lvH = (x, cy, lw, vw, h, label, val) => {
-            const lblL = doc.splitTextToSize(label, lw-2);
-            const valL = doc.splitTextToSize(val||'', vw-2);
-            const ch = Math.max(h, Math.max(lblL.length, valL.length)*4.5+3);
-            doc.setDrawColor(0,0,0); doc.setLineWidth(0.2);
-            doc.rect(x, cy, lw, ch);
-            doc.setFont('times','bold'); doc.setFontSize(FS); doc.text(lblL, x+1.5, cy+4);
-            doc.rect(x+lw, cy, vw, ch);
-            doc.setFont('times','normal'); doc.setFontSize(FS); doc.text(valL, x+lw+1.5, cy+4);
-            return ch;
+        // Draw a single cell: x, y, width, height, text, bold, color (optional)
+        const PAD_X = 1.5;
+        const PAD_W = 3;
+
+        const cell = (cx, cy, w, h, text, bold = false, color = null) => {
+            doc.setDrawColor(0, 0, 0);
+            doc.setLineWidth(0.2);
+            doc.setFillColor(255, 255, 255);
+            doc.rect(cx, cy, w, h, 'FD');
+            if (color) doc.setTextColor(...color);
+            doc.setFont('times', bold ? 'bold' : 'normal');
+            doc.setFontSize(FS);
+            const lines = doc.splitTextToSize(String(text || ''), w - PAD_W);
+            const lineH  = 4.5; // height per line in mm
+            const textH  = lines.length * lineH;
+            const startY = cy + (h - textH) / 2 + lineH * 0.8; // vertically centered
+            doc.text(lines, cx + PAD_X, startY);
+            doc.setTextColor(0, 0, 0);
         };
+
+        // Row height calculator — finds tallest cell in a row
+        const rowH = (pairs, colW) => {
+            let max = 8;
+            pairs.forEach(([txt, w]) => {
+                const lines = doc.splitTextToSize(String(txt || ''), (w || colW) - 3);
+                const needed = lines.length * 4.5 + 3;
+                if (needed > max) max = needed;
+            });
+            return max;
+        };
+
+        // ─── TABLE 1: REGISTRATION INFO ──────────────────────────────
+
+        // Row 1: Registration Info (4 cols) | Current Authority (1 col) | value (3 cols)
+        const r1H = 10;
+        cell(ML,           y, COL*4, r1H, 'Registration Info',   true);
+        cell(ML + COL*4,   y, COL,   r1H, 'Current Authority',   true);
+        cell(ML + COL*5,   y, COL*3, r1H, v('brta_authority'),   false); // red value
+        y += r1H;
+
+        // Row 2: 8 equal columns — label|value|label|value|label|value|label|value
+        const r2Pairs = [
+            ['Registration\nId',  COL], [v('brta_registration_id'),  COL],
+            ['Registration\nNo',  COL], [v('brta_registration_no'),  COL],
+            ['Previous\nRegistration No',  COL], [v('brta_prev_reg_no'),      COL],
+            ['Application\nStatus',COL],[v('brta_app_status'),       COL],
+        ];
+        const r2H = rowH(r2Pairs.map(([t, w]) => [t, w]), COL);
+        let rx2 = ML;
+        r2Pairs.forEach(([txt, w], i) => {
+            cell(rx2, y, w, r2H, txt, i % 2 === 0); // odd index = label (bold)
+            rx2 += w;
+        });
+        y += r2H;
+
+        // Row 3: Registration Date|val | Hire|val | Ownership Type (label 1col, value 3col)
+        const r3Pairs = [
+            ['Registration\nDate', COL], [dts('brta_reg_date'), COL],
+            ['Hire',               COL], [v('brta_hire'),       COL],
+            ['Ownership\nType',    COL], [v('brta_ownership_type'), COL*3],
+        ];
+        const r3H = rowH(r3Pairs.map(([t, w]) => [t, w]), COL);
+        let rx3 = ML;
+        r3Pairs.forEach(([txt, w], i) => {
+            const isBold = i % 2 === 0; // labels at even index
+            cell(rx3, y, w, r3H, txt, isBold);
+            rx3 += w;
+        });
+        y += r3H;
+
+        // Row 4: Hire Purchase|val | Bank Name|val | Bank Address (label 1col, value 3col)
+        const r4Pairs = [
+            ['Hire\nPurchase', COL], [v('brta_hire_purchase'), COL],
+            ['Bank Name',      COL], [v('brta_bank_name'),     COL],
+            ['Bank Address',   COL], [v('brta_bank_address'),  COL*3],
+        ];
+        const r4H = rowH(r4Pairs.map(([t, w]) => [t, w]), COL);
+        let rx4 = ML;
+        r4Pairs.forEach(([txt, w], i) => {
+            cell(rx4, y, w, r4H, txt, i % 2 === 0);
+            rx4 += w;
+        });
+        y += r4H + 4;
+
+        // ─── SHARED HELPERS for Vehicle & Owner tables ───────────
+        const rh  = 6;
+        const LW2 = 24;
+        const C3  = Math.floor(CW / 3), C3r = CW - C3 * 2;
 
         const row3b = (lw, pairs, minH) => {
             const colWs = [C3, C3, C3r];
             let maxH = minH;
-            pairs.forEach(([lbl,val], i) => {
-                const vw = colWs[i]-lw;
-                const needed = Math.max(doc.splitTextToSize(lbl,lw-2).length, doc.splitTextToSize(val||'',vw-2).length)*4.5+3;
+            pairs.forEach(([lbl, val], i) => {
+                const vw = colWs[i] - lw;
+                const needed = Math.max(
+                    doc.splitTextToSize(lbl, lw - 2).length,
+                    doc.splitTextToSize(val || '', vw - 2).length
+                ) * 4.5 + 3;
                 if (needed > maxH) maxH = needed;
             });
             let x = ML;
-            pairs.forEach(([lbl,val], i) => { lvH(x, y, lw, colWs[i]-lw, maxH, lbl, val); x += colWs[i]; });
+            pairs.forEach(([lbl, val], i) => {
+                cell(x, y, lw, maxH, lbl, true);
+                cell(x + lw, y, colWs[i] - lw, maxH, val, false);
+                x += colWs[i];
+            });
             return maxH;
         };
 
-        const hdr = (w, label) => {
-            doc.setDrawColor(0,0,0); doc.setLineWidth(0.2); doc.rect(ML, y, w, rh);
-            doc.setFont('times','bold'); doc.setFontSize(FS); doc.text(label, ML+1.5, y+5);
+        // Section header spanning full width
+        const sectionHdr = (label) => {
+            cell(ML, y, CW, rh, label, true);
         };
 
-        const LW1=22, LW2=24;
-
-        // Registration Info
-        hdr(CW, 'Registration Info');
-        doc.setDrawColor(0,0,0); doc.setLineWidth(0.2);
-        doc.rect(ML+C3*2, y, LW1, rh);
-        doc.setFont('times','bold'); doc.setFontSize(FS); doc.text('Current\nAuthority', ML+C3*2+1.5, y+2.5);
-        doc.rect(ML+C3*2+LW1, y, C3r-LW1, rh);
-        doc.setFont('times','normal'); doc.setFontSize(FS);
-        doc.text(doc.splitTextToSize(v('brta_authority'), C3r-LW1-2), ML+C3*2+LW1+1.5, y+3.5);
-        doc.setFont('times','bold'); doc.setFontSize(FS); doc.text('Registration Info', ML+1.5, y+5);
-        y += rh;
-
-        y += row3b(LW1,[['Registration\nId',v('brta_registration_id')],['Registration\nNo',v('brta_registration_no')],['Previous\nReg No',v('brta_prev_reg_no')]],rh*2);
-        y += row3b(LW1,[['Application\nStatus',v('brta_app_status')],['Registration\nDate',dt('brta_reg_date')],['Hire',v('brta_hire')]],rh*2);
-        y += row3b(LW1,[['Ownership\nType',v('brta_ownership_type')],['Hire\nPurchase',v('brta_hire_purchase')],['Bank Name',v('brta_bank_name')]],rh*2);
-
-        const baLines = doc.splitTextToSize(v('brta_bank_address')||'', CW-LW1-2);
-        const baH = Math.max(rh, baLines.length*4.5+3);
-        doc.setDrawColor(0,0,0); doc.setLineWidth(0.2);
-        doc.rect(ML, y, LW1, baH);
-        doc.setFont('times','bold'); doc.setFontSize(FS); doc.text('Bank Address', ML+1.5, y+4);
-        doc.rect(ML+LW1, y, CW-LW1, baH);
-        doc.setFont('times','normal'); doc.setFontSize(FS); doc.text(baLines, ML+LW1+1.5, y+4);
-        y += baH+4;
-
-        // Vehicle Info
-        hdr(CW, 'Vehicle Info'); y += rh;
-        y += row3b(LW2,[['Chassis No',v('brta_chassis_no')],['Engine No',v('brta_engine_no')],['Manufacture\nYear',v('brta_mfg_year')]],rh*2);
-        y += row3b(LW2,[['Vehicle Class',v('brta_veh_class')],['Vehicle Type',v('brta_veh_type')],['No of Seat',v('brta_num_seats')]],rh*2);
-        y += row3b(LW2,[['Manufacturer',v('brta_manufacturer')],["Maker's\nCountry",v('brta_country')],['Color',v('brta_color')]],rh*2);
+        // TABLE 2: Vehicle Info
+        sectionHdr('Vehicle Info'); y += rh;
+        y += row3b(LW2,[['Chassis No',v('brta_chassis_no')],['Engine No',v('brta_engine_no')],['Manufacture\nYear',v('brta_mfg_year')]],rh);
+        y += row3b(LW2,[['Vehicle Class',v('brta_veh_class')],['Vehicle Type',v('brta_veh_type')],['No of Seat',v('brta_num_seats')]],rh);
+        y += row3b(LW2,[['Manufacturer',v('brta_manufacturer')],["Maker's\nCountry",v('brta_country')],['Color',v('brta_color')]],rh);
         y += row3b(LW2,[['Horse Power',v('brta_hp')],['RPM',v('brta_rpm')],['CC',v('brta_cc')]],rh);
         y += row3b(LW2,[['Unladen\nWeight',v('brta_unladen_weight')],['Max Weight',v('brta_max_weight')],['No of\nCylinders',v('brta_cylinders')]],rh);
-        let x3=ML;
-        lvH(x3,y,LW2,C3-LW2,rh,'Vehicle Model',v('brta_vehicle_model')); x3+=C3;
-        lvH(x3,y,LW2,C3-LW2,rh,'Mileage',v('brta_mileage')); x3+=C3;
-        doc.setDrawColor(0,0,0); doc.setLineWidth(0.2); doc.rect(x3,y,C3r,rh);
-        y += rh+4;
+        
+        // Last row: Vehicle Model | Mileage | empty | empty
+        cell(ML,            y, LW2,       rh, 'Vehicle Model', true);
+        cell(ML+LW2,        y, C3-LW2,    rh, v('brta_vehicle_model'), false);
+        cell(ML+C3,         y, LW2,       rh, 'Mileage', true);
+        cell(ML+C3+LW2,     y, C3-LW2,    rh, v('brta_mileage'), false);
+        cell(ML+C3*2,       y, LW2,       rh, '', false);
+        cell(ML+C3*2+LW2,   y, C3r-LW2,   rh, '', false);
+        y += rh + 4;
 
-        // Owner Info
-        hdr(CW, 'Owner Info'); y += rh;
+        // TABLE 3: Owner Info
+        sectionHdr('Owner Info'); y += rh;
         let ownerIdx = 1;
         while (fd['owner_'+ownerIdx+'_name'] || ownerIdx === 1) {
-            const oName=v('owner_'+ownerIdx+'_name'), oFather=v('owner_'+ownerIdx+'_father'), oAddr=v('owner_'+ownerIdx+'_address');
-            if (!oName && ownerIdx>1) break;
-            y += row3b(22,[["Owner's\nName",oName],["Father's\nName",oFather],["Owner's\nAddress",oAddr]],rh*2);
+            const oName   = v('owner_'+ownerIdx+'_name');
+            const oFather = v('owner_'+ownerIdx+'_father');
+            const oAddr   = v('owner_'+ownerIdx+'_address');
+            if (!oName && ownerIdx > 1) break;
+            y += row3b(22, [["Owner's\nName", oName], ["Father's\nName", oFather], ["Owner's\nAddress", oAddr]], rh);
             ownerIdx++;
-            if (y+rh*2 > CONTENT_BOTTOM) y = E.newPage();
+            if (y + rh > CONTENT_BOTTOM) y = E.newPage();
         }
 
         // ── Photos & QR (same as BBPLC) ──────────────────────
