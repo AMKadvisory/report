@@ -9,11 +9,13 @@ const PDFEngine = {
 
     // Page constants (A4 mm)
     PW: 210, PH: 297,
-    IMG_H: 22,
+    IMG_H: 12.7,   // header height (0.5" — from previous)
+    FOOTER_H: 10.9, // add this new constant for footer
     MT: 30, MB: 20,
     ML: 25, MR: 25,
     get CW() { return this.PW - this.ML - this.MR; },
-    get CONTENT_BOTTOM() { return this.PH - this.MB; },
+    get CONTENT_BOTTOM() { return this.PH - 10.9 - 2; }, // 2mm breathing room above footer
+
 
     doc: null,
     headerImg: null,
@@ -46,11 +48,27 @@ const PDFEngine = {
         return this.MT; // returns starting y
     },
 
+
     // ── Header & footer on every page ───────────────────────
     drawHeaderFooter() {
-        const { doc, PW, PH, IMG_H } = this;
-        if (this.headerImg) { try { doc.addImage(this.headerImg, 'PNG', 0, 0, PW, IMG_H); } catch(e){} }
-        if (this.footerImg) { try { doc.addImage(this.footerImg, 'PNG', 0, PH - IMG_H, PW, IMG_H); } catch(e){} }
+        const { doc, PW, PH } = this;
+        const HEADER_W = 127,  HEADER_H = 12.7;
+        const FOOTER_W = 210.6, FOOTER_H = 10.9;
+
+        // Header: horizontally centered, y nudged down slightly
+        if (this.headerImg) {
+            try {
+                const hx = (PW - HEADER_W) / 2; // = 41.5 — exact center
+                doc.addImage(this.headerImg, 'PNG', hx, 5, HEADER_W, HEADER_H);
+            } catch(e) {}
+        }
+
+        // Footer: flush to bottom edge, no white space
+        if (this.footerImg) {
+            try {
+                doc.addImage(this.footerImg, 'PNG', 0, PH - FOOTER_H, PW, FOOTER_H);
+            } catch(e) {}
+        }
     },
 
     newPage() {
