@@ -29,7 +29,7 @@ const VehicleValuationPDF = {
         };
 
         // Initialise document — returns starting y (MT)
-        let y = await E.init('AMK Header.png', 'AKM Footer.png');
+        let y = await E.init(null, null);
         const { doc, PW, ML, CW, CONTENT_BOTTOM } = E;
 
         // Helper to render section heading with underline 
