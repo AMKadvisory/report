@@ -76,6 +76,7 @@ const CBLVehicleValuationPDF = {
         //          Present Market Value Table → Submission Date
         // ══════════════════════════════════════════════════════
 
+        y += 6;
         // Title
         E.bold(16);
         doc.text('Inspection & Valuation Report of Used/Pre-Owned Vehicle', PW/2, y, { align:'center' });
@@ -182,6 +183,7 @@ const CBLVehicleValuationPDF = {
         y = E.newPage();
         E.normal(10);
 
+        y+= 6;
         // Bank Ref + Our Ref + Date block
         doc.text('Bank Ref. No.: ' + v('bank_ref'), ML, y); y += 5;
         doc.text('Our Ref.: ' + v('letter_ref'),    ML, y); y += 5;
