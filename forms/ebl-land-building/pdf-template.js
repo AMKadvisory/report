@@ -789,8 +789,8 @@ const EBLLandBuildingPDF = {
         // ══════════════════════════════════════════════════
         y = newPage();
 
-        // J. Price Justification – structured table
-        y = heading(y, 'J. Price Justification:');
+        // J. Price Reference – structured table
+        y = heading(y, 'J. Price Reference:');
         [['Maximum Price',       v('max_price')],
          ['Minimum Price',       v('min_price')],
          ['Last Buy-Sell Record',v('last_buy_sell')],
