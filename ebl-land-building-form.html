@@ -166,12 +166,12 @@
                 </div>
 
                 <div class="form-row">
-                    <div class="form-group"><label class="form-label">Valuer 1</label>
+                    <div class="form-group"><label class="form-label">Reporter</label>
                         <select class="form-control" data-field="valuer_1_name" id="ebl-valuer1" onchange="eblAutoFillValuer(1)">
-                            <option value="">Select Valuer 1</option>
+                            <option value="">Select Reporter</option>
                             <option value="Engr. Abdullah Al Rafi" data-desig="Executive,ISV">Engr. Abdullah Al Rafi</option>
                             <option value="Md Towhid Islam"        data-desig="Senior Officer,ISV">Md Towhid Islam</option>
-                            <option value="Alif Ahmed"             data-desig="Assistant Executive,ISV">Alif Ahmed</option>
+                            <option value="Alif Ahmed Chowdhury"   data-desig="Assistant Executive,ISV">Alif Ahmed Chowdhury</option>
                             <option value="MD Junaid Hasan"        data-desig="Officer,ISV">MD Junaid Hasan</option>
                             <option value="Utsha Kar Ork"          data-desig="Sr. Officer,ISV">Utsha Kar Ork</option>
                             <option value="Sazzadur Rahman"        data-desig="Senior Officer,ISV">Sazzadur Rahman</option>
@@ -180,15 +180,15 @@
                             <option value="Md. Sahed Alam"         data-desig="Sr. Officer,ISV">Md. Sahed Alam</option>
                         </select>
                     </div>
-                    <div class="form-group"><label class="form-label">Valuer 1 Designation</label><input type="text" class="form-control" data-field="valuer_1_designation" id="ebl-desig1" readonly></div>
+                    <div class="form-group"><label class="form-label">Reporter Designation</label><input type="text" class="form-control" data-field="valuer_1_designation" id="ebl-desig1" readonly></div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group"><label class="form-label">Valuer 2</label>
+                    <div class="form-group"><label class="form-label">Reviewer</label>
                         <select class="form-control" data-field="valuer_2_name" id="ebl-valuer2" onchange="eblAutoFillValuer(2)">
-                            <option value="">Select Valuer 2</option>
+                            <option value="">Select Reviewer</option>
                             <option value="Engr. Abdullah Al Rafi" data-desig="Executive,ISV">Engr. Abdullah Al Rafi</option>
                             <option value="Md Towhid Islam"        data-desig="Senior Officer,ISV">Md Towhid Islam</option>
-                            <option value="Alif Ahmed"             data-desig="Assistant Executive,ISV">Alif Ahmed</option>
+                            <option value="Alif Ahmed Chowdhury"   data-desig="Assistant Executive,ISV">Alif Ahmed Chowdhury</option>
                             <option value="MD Junaid Hasan"        data-desig="Officer,ISV">MD Junaid Hasan</option>
                             <option value="Utsha Kar Ork"          data-desig="Sr. Officer,ISV">Utsha Kar Ork</option>
                             <option value="Sazzadur Rahman"        data-desig="Senior Officer,ISV">Sazzadur Rahman</option>
@@ -197,7 +197,7 @@
                             <option value="Md. Sahed Alam"         data-desig="Sr. Officer,ISV">Md. Sahed Alam</option>
                         </select>
                     </div>
-                    <div class="form-group"><label class="form-label">Valuer 2 Designation</label><input type="text" class="form-control" data-field="valuer_2_designation" id="ebl-desig2" readonly></div>
+                    <div class="form-group"><label class="form-label">Reviewer Designation</label><input type="text" class="form-control" data-field="valuer_2_designation" id="ebl-desig2" readonly></div>
                 </div>
             </div>
         </div>
@@ -328,7 +328,8 @@
                     <table class="floor-table" id="ebl-tbl-area">
                         <thead><tr><th>Floor</th><th>Area as per Plan (Sft.)</th><th>Area as per Physical (Sft.)</th><th>Deviation (Sft.)</th><th>Deviation (%)</th></tr></thead>
                         <tbody id="ebl-area-body">
-                            <tr><td><input type="text" value="Ground Floor" oninput="eblSyncFloor(0,this.value)"></td><td><input type="text" oninput="eblCalcAreaDev(this)"></td><td><input type="text" oninput="eblCalcAreaDev(this)"></td><td><input type="text" readonly></td><td><input type="text" readonly></td></tr>
+                            <tr><td><input type="text" value="Plinth" oninput="eblSyncFloor(0,this.value)"></td><td><input type="text" oninput="eblCalcAreaDev(this)"></td><td><input type="text" oninput="eblCalcAreaDev(this)"></td><td><input type="text" readonly></td><td><input type="text" readonly></td></tr>
+                            <tr><td><input type="text" value="Ground Floor" oninput="eblSyncFloor(1,this.value)"></td><td><input type="text" oninput="eblCalcAreaDev(this)"></td><td><input type="text" oninput="eblCalcAreaDev(this)"></td><td><input type="text" readonly></td><td><input type="text" readonly></td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -429,7 +430,7 @@
                         <tfoot>
                             <tr style="background:var(--gray-100);font-weight:600;"><td colspan="4">Total Value of Building</td><td><input type="text" id="ebl-tot-plan" readonly></td><td><input type="text" id="ebl-tot-phys" readonly></td><td></td><td><input type="text" id="ebl-pres-plan" readonly></td><td><input type="text" id="ebl-pres-phys" readonly></td></tr>
                             <tr><td colspan="7">Depreciation @ <span id="ebl-dep-pct">0</span>%</td><td><input type="text" id="ebl-dep-plan" readonly></td><td><input type="text" id="ebl-dep-phys" readonly></td></tr>
-                            <tr style="background:var(--navy);color:white;font-weight:600;"><td colspan="7" style="color:white;">Net Value of Building</td><td><input type="text" id="ebl-net-plan" readonly style="background:transparent;color:white;font-weight:bold;"></td><td><input type="text" id="ebl-net-phys" readonly style="background:transparent;color:white;font-weight:bold;"></td></tr>
+                            <tr style="background:var(--navy);color:white;font-weight:600;"><td colspan="7">Net Value of Building</td><td><input type="text" id="ebl-net-plan" readonly style="background:transparent;color:white;font-weight:bold;"></td><td><input type="text" id="ebl-net-phys" readonly style="background:transparent;color:white;font-weight:bold;"></td></tr>
                         </tfoot>
                     </table>
                 </div>
@@ -439,7 +440,7 @@
         <!-- ══ SHEET 10: J, K, L ══ -->
         <div class="report-section" id="sec-jkl">
             <div class="section-card">
-                <div class="section-heading">💬 J. Price Justification</div>
+                <div class="section-heading">💬 J. Price Reference</div>
                 <div class="form-row">
                     <div class="form-group"><label class="form-label">Maximum Price (BDT)</label><input type="text" class="form-control" data-field="max_price"></div>
                     <div class="form-group"><label class="form-label">Minimum Price (BDT)</label><input type="text" class="form-control" data-field="min_price"></div>
