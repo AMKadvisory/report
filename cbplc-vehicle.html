@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-GB">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valuation Form – AMK Portal</title>
+    <title>Valuation Form - AMK Portal</title>
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
     <style>
         body { background: var(--gray-100); }
         .form-topbar {
@@ -124,6 +125,7 @@
         .valuation-highlight .vh-item input { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: var(--radius-sm); padding: 0.5rem 0.75rem; width: 100%; font-family: var(--font-display); font-size: 1.3rem; font-weight: 600; outline: none; }
         .valuation-highlight .vh-item input::placeholder { color: rgba(255,255,255,0.3); }
         .valuation-highlight .vh-item input:read-only { color: var(--gold); cursor: default; }
+        .sortable-ghost { opacity: 0.3; border: 2px dashed var(--gold) !important; }
     </style>
 </head>
 <body>
@@ -384,7 +386,7 @@
                     <div class="form-group"><label class="form-label">Color</label><input type="text" class="form-control" data-field="color"></div>
                     <div class="form-group">
                         <label class="form-label">Type of Vehicle</label>
-                        <div class="pill-group" data-checkbox-group="vehicle_type">
+                        <div class="pill-group" data-checkbox-group="vehicle_type" data-single="true">
                             <span class="pill" data-value="Non-Hybrid" onclick="togglePill(this)">Non-Hybrid</span>
                             <span class="pill" data-value="Hybrid" onclick="togglePill(this)">Hybrid</span>
                             <span class="pill" data-value="Electric" onclick="togglePill(this)">Electric</span>
@@ -420,7 +422,7 @@
                     <div class="form-group"><label class="form-label">Ownership Transfer Status</label><input type="text" class="form-control" data-field="ownership_transfer"></div>
                     <div class="form-group">
                         <label class="form-label">Hire Purchase</label>
-                        <div class="pill-group" data-checkbox-group="hire_purchase">
+                        <div class="pill-group" data-checkbox-group="hire_purchase" data-single="true">
                             <span class="pill" data-value="Yes" onclick="togglePill(this)">Yes</span>
                             <span class="pill" data-value="No" onclick="togglePill(this)">No</span>
                         </div>
@@ -449,13 +451,13 @@
                 </div>
                 <div class="form-group">
                     <label class="form-label">Additional Accessories</label>
-                    <div class="pill-group" data-checkbox-group="interior_accessories_yn" data-toggle-target="interior-acc-detail">
+                    <div class="pill-group" data-checkbox-group="interior_accessories_yn" data-toggle-target="interior-acc-detail" data-single="true">
                         <span class="pill" data-value="Yes" onclick="togglePill(this);toggleDetail('interior-acc-detail',this)">Yes</span>
                         <span class="pill" data-value="No" onclick="togglePill(this);toggleDetail('interior-acc-detail',this)">No</span>
                     </div>
                 </div>
                 <div class="form-group" id="interior-acc-detail" style="display:none;">
-                    <label class="form-label">Accessories Detail</label>
+                    <label class="form-label">Accessories Details</label>
                     <textarea class="form-control" data-field="interior_accessories" rows="2" placeholder="Describe accessories"></textarea>
                 </div>
             </div>
@@ -468,13 +470,13 @@
                 <div id="exterior-checks"></div>
                 <div class="form-group">
                     <label class="form-label">Additional Accessories</label>
-                    <div class="pill-group" data-checkbox-group="exterior_accessories_yn" data-toggle-target="exterior-acc-detail">
+                    <div class="pill-group" data-checkbox-group="exterior_accessories_yn" data-toggle-target="exterior-acc-detail" data-single="true">
                         <span class="pill" data-value="Yes" onclick="togglePill(this);toggleDetail('exterior-acc-detail',this)">Yes</span>
                         <span class="pill" data-value="No" onclick="togglePill(this);toggleDetail('exterior-acc-detail',this)">No</span>
                     </div>
                 </div>
                 <div class="form-group" id="exterior-acc-detail" style="display:none;">
-                    <label class="form-label">Accessories Detail</label>
+                    <label class="form-label">Accessories Details</label>
                     <textarea class="form-control" data-field="exterior_accessories" rows="2" placeholder="Describe accessories"></textarea>
                 </div>
             </div>
@@ -486,6 +488,13 @@
                 <div class="section-heading">📊 Overall Assessment</div>
                 <div id="assessment-checks"></div>
                 <div class="form-group" style="margin-top:1rem;">
+                    <label class="form-label">Known Defects</label>
+                    <div class="pill-group" data-checkbox-group="known_defects" data-single="true">
+                        <span class="pill" data-value="Yes" onclick="togglePill(this);toggleDetail('known-defects-detail',this)">Yes</span>
+                        <span class="pill" data-value="No" onclick="togglePill(this);toggleDetail('known-defects-detail',this)">No</span>
+                    </div>
+                </div>
+                <div class="form-group" id="known-defects-detail" style="display:none;">
                     <label class="form-label">Known Defects – Details</label>
                     <textarea class="form-control" data-field="known_defects_detail" rows="2" placeholder="Describe if any"></textarea>
                 </div>
@@ -498,7 +507,7 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group"><label class="form-label">Location</label><input type="text" class="form-control" data-field="inspection_location"></div>
-                    <div class="form-group"><label class="form-label">Contact Person Presented</label><input type="text" class="form-control" data-field="contact_person"></div>
+                    <div class="form-group"><label class="form-label">Contact Person Presented</label><textarea class="form-control" data-field="contact_person" rows="2"></textarea></div>
                 </div>
                 <div class="form-group" style="max-width:50%;"><label class="form-label">Name of Verification Agent</label><input type="text" class="form-control" data-field="verification_agent"></div>
             </div>
@@ -569,10 +578,6 @@
                         </label>
                         <p style="margin-top:0.5rem;font-size:0.75rem;color:var(--gray-400);">PNG or JPG. Max 1MB.</p>
                     </div>
-                    <div style="flex:1;min-width:200px;">
-                        <div class="form-group"><label class="form-label">QR Code Label / Caption</label><input type="text" class="form-control" data-field="qr_label" placeholder="e.g. BRTA Verification Link"></div>
-                        <div class="form-group"><label class="form-label">QR Code URL (optional, printed below QR)</label><input type="text" class="form-control" data-field="qr_url" placeholder="https://..."></div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -585,64 +590,67 @@
                     ℹ️ Fill in the data exactly as shown on the BRTA Registration Acknowledgement Slip.
                 </div>
                 <div class="form-row-3">
-                    <div class="form-group"><label class="form-label">Registration Id</label><input type="text" class="form-control" data-field="brta_registration_id"></div>
-                    <div class="form-group"><label class="form-label">Registration No</label><input type="text" class="form-control" data-field="brta_registration_no"></div>
-                    <div class="form-group"><label class="form-label">Previous Registration No</label><input type="text" class="form-control" data-field="brta_prev_reg_no"></div>
+                    <div class="form-group"><label class="form-label">Registration Id</label><input type="text" class="form-control" data-field="brta_registration_id" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label class="form-label">Registration No</label><input type="text" class="form-control" data-field="brta_registration_no" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label class="form-label">Previous Registration No</label><input type="text" class="form-control" data-field="brta_prev_reg_no" oninput="this.value=this.value.toUpperCase()"></div>
                 </div>
                 <div class="form-row-3">
                     <div class="form-group"><label class="form-label">Registration Date</label><input type="date" class="form-control" data-field="brta_reg_date"></div>
-                    <div class="form-group"><label class="form-label">Application Status</label><input type="text" class="form-control" data-field="brta_app_status"></div>
-                    <div class="form-group"><label class="form-label">Current Authority</label><input type="text" class="form-control" data-field="brta_authority"></div>
+                    <div class="form-group"><label class="form-label">Application Status</label><input type="text" class="form-control" data-field="brta_app_status" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label class="form-label">Current Authority</label><input type="text" class="form-control" data-field="brta_authority" oninput="this.value=this.value.toUpperCase()"></div>
                 </div>
                 <div class="form-row-3">
-                    <div class="form-group"><label class="form-label">Hire</label><input type="text" class="form-control" data-field="brta_hire"></div>
-                    <div class="form-group"><label class="form-label">Hire Purchase</label><input type="text" class="form-control" data-field="brta_hire_purchase"></div>
-                    <div class="form-group"><label class="form-label">Ownership Type</label><input type="text" class="form-control" data-field="brta_ownership_type"></div>
+                    <div class="form-group"><label class="form-label">Hire</label><input type="text" class="form-control" data-field="brta_hire" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label class="form-label">Hire Purchase</label><input type="text" class="form-control" data-field="brta_hire_purchase" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label class="form-label">Ownership Type</label><input type="text" class="form-control" data-field="brta_ownership_type" oninput="this.value=this.value.toUpperCase()"></div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group"><label class="form-label">Bank Name</label><input type="text" class="form-control" data-field="brta_bank_name"></div>
-                    <div class="form-group"><label class="form-label">Bank Address</label><input type="text" class="form-control" data-field="brta_bank_address"></div>
+                    <div class="form-group"><label class="form-label">Bank Name</label><input type="text" class="form-control" data-field="brta_bank_name" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label class="form-label">Bank Address</label><input type="text" class="form-control" data-field="brta_bank_address" oninput="this.value=this.value.toUpperCase()"></div>
                 </div>
                 <hr style="margin:1.5rem 0;border-color:var(--gray-200);">
                 <div class="form-row-3">
-                    <div class="form-group"><label class="form-label">Chassis No</label><input type="text" class="form-control" data-field="brta_chassis_no"></div>
-                    <div class="form-group"><label class="form-label">Engine No</label><input type="text" class="form-control" data-field="brta_engine_no"></div>
-                    <div class="form-group"><label class="form-label">Manufacture Year</label><input type="text" class="form-control" data-field="brta_mfg_year"></div>
+                    <div class="form-group"><label class="form-label">Chassis No</label><input type="text" class="form-control" data-field="brta_chassis_no" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label class="form-label">Engine No</label><input type="text" class="form-control" data-field="brta_engine_no" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label class="form-label">Manufacture Year</label><input type="text" class="form-control" data-field="brta_mfg_year" oninput="this.value=this.value.toUpperCase()"></div>
                 </div>
                 <div class="form-row-3">
-                    <div class="form-group"><label class="form-label">Vehicle Class</label><input type="text" class="form-control" data-field="brta_veh_class"></div>
-                    <div class="form-group"><label class="form-label">Vehicle Type</label><input type="text" class="form-control" data-field="brta_veh_type"></div>
-                    <div class="form-group"><label class="form-label">No of Seat</label><input type="text" class="form-control" data-field="brta_num_seats"></div>
+                    <div class="form-group"><label class="form-label">Vehicle Class</label><input type="text" class="form-control" data-field="brta_veh_class" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label class="form-label">Vehicle Type</label><input type="text" class="form-control" data-field="brta_veh_type" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label class="form-label">No of Seat</label><input type="text" class="form-control" data-field="brta_num_seats" oninput="this.value=this.value.toUpperCase()"></div>
                 </div>
                 <div class="form-row-3">
-                    <div class="form-group"><label class="form-label">Manufacturer</label><input type="text" class="form-control" data-field="brta_manufacturer"></div>
-                    <div class="form-group"><label class="form-label">Maker's Country</label><input type="text" class="form-control" data-field="brta_country"></div>
-                    <div class="form-group"><label class="form-label">Color</label><input type="text" class="form-control" data-field="brta_color"></div>
+                    <div class="form-group"><label class="form-label">Manufacturer</label><input type="text" class="form-control" data-field="brta_manufacturer" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label class="form-label">Maker's Country</label><input type="text" class="form-control" data-field="brta_country" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label class="form-label">Color</label><input type="text" class="form-control" data-field="brta_color" oninput="this.value=this.value.toUpperCase()"></div>
                 </div>
                 <div class="form-row-3">
-                    <div class="form-group"><label class="form-label">Horse Power</label><input type="text" class="form-control" data-field="brta_hp"></div>
-                    <div class="form-group"><label class="form-label">RPM</label><input type="text" class="form-control" data-field="brta_rpm"></div>
-                    <div class="form-group"><label class="form-label">CC</label><input type="text" class="form-control" data-field="brta_cc"></div>
+                    <div class="form-group"><label class="form-label">Horse Power</label><input type="text" class="form-control" data-field="brta_hp" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label class="form-label">RPM</label><input type="text" class="form-control" data-field="brta_rpm" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label class="form-label">CC</label><input type="text" class="form-control" data-field="brta_cc" oninput="this.value=this.value.toUpperCase()"></div>
                 </div>
                 <div class="form-row-3">
-                    <div class="form-group"><label class="form-label">Unladen Weight</label><input type="text" class="form-control" data-field="brta_unladen_weight"></div>
-                    <div class="form-group"><label class="form-label">Max Weight</label><input type="text" class="form-control" data-field="brta_max_weight"></div>
-                    <div class="form-group"><label class="form-label">No of Cylinders</label><input type="text" class="form-control" data-field="brta_cylinders"></div>
+                    <div class="form-group"><label class="form-label">Unladen Weight</label><input type="text" class="form-control" data-field="brta_unladen_weight" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label class="form-label">Max Weight</label><input type="text" class="form-control" data-field="brta_max_weight" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label class="form-label">No of Cylinders</label><input type="text" class="form-control" data-field="brta_cylinders" oninput="this.value=this.value.toUpperCase()"></div>
                 </div>
                 <div class="form-row">
-                    <div class="form-group"><label class="form-label">Vehicle Model</label><input type="text" class="form-control" data-field="brta_vehicle_model"></div>
-                    <div class="form-group"><label class="form-label">Mileage</label><input type="text" class="form-control" data-field="brta_mileage"></div>
+                    <div class="form-group"><label class="form-label">Vehicle Model</label><input type="text" class="form-control" data-field="brta_vehicle_model" oninput="this.value=this.value.toUpperCase()"></div>
+                    <div class="form-group"><label class="form-label">Mileage</label><input type="text" class="form-control" data-field="brta_mileage" oninput="this.value=this.value.toUpperCase()"></div>
                 </div>
                 <hr style="margin:1.5rem 0;border-color:var(--gray-200);">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
                     <strong style="font-family:var(--font-display);">Owner Information</strong>
-                    <button class="btn btn-outline btn-sm" onclick="addOwnerRow()">+ Add Owner</button>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn btn-outline btn-sm" onclick="addOwnerRow()">+ Add Owner</button>
+                        <button class="btn btn-outline btn-sm" onclick="removeOwnerRow()" style="color:var(--danger);border-color:var(--danger);">− Remove Owner</button>
+                    </div>
                 </div>
                 <div id="owner-rows">
                     <div class="form-row-3 owner-row" style="margin-bottom:1rem;">
-                        <div class="form-group"><label class="form-label">Owner's Name</label><input type="text" class="form-control" data-field="owner_1_name"></div>
-                        <div class="form-group"><label class="form-label">Father's Name</label><input type="text" class="form-control" data-field="owner_1_father"></div>
-                        <div class="form-group"><label class="form-label">Owner's Address</label><input type="text" class="form-control" data-field="owner_1_address"></div>
+                        <div class="form-group"><label class="form-label">Owner's Name</label><input type="text" class="form-control" data-field="owner_1_name" oninput="this.value=this.value.toUpperCase()"></div>
+                        <div class="form-group"><label class="form-label">Father's Name</label><input type="text" class="form-control" data-field="owner_1_father" oninput="this.value=this.value.toUpperCase()"></div>
+                        <div class="form-group"><label class="form-label">Owner's Address</label><input type="text" class="form-control" data-field="owner_1_address" oninput="this.value=this.value.toUpperCase()"></div>
                     </div>
                 </div>
             </div>
@@ -756,7 +764,6 @@ document.getElementById('exterior-checks').innerHTML = [
 document.getElementById('assessment-checks').innerHTML = [
     ['Interior Condition', 'interior_condition', ['Good','Average','Poor']],
     ['Exterior Condition', 'exterior_condition', ['Good','Average','Poor']],
-    ['Any Known Defects',  'known_defects',      twoOpts],
 ].map(([l,f,o]) => buildCheckRow(l,f,o,true)).join('');
 
 // ── Owner repeater ───────────────────────────────────────────
@@ -767,10 +774,20 @@ function addOwnerRow() {
     div.className = 'form-row-3 owner-row';
     div.style.marginBottom = '1rem';
     div.innerHTML = `
-        <div class="form-group"><label class="form-label">Owner's Name</label><input type="text" class="form-control" data-field="owner_${ownerCount}_name"></div>
-        <div class="form-group"><label class="form-label">Father's Name</label><input type="text" class="form-control" data-field="owner_${ownerCount}_father"></div>
-        <div class="form-group"><label class="form-label">Owner's Address</label><input type="text" class="form-control" data-field="owner_${ownerCount}_address"></div>`;
+        <div class="form-group"><label class="form-label">Owner's Name</label><input type="text" class="form-control" data-field="owner_${ownerCount}_name" oninput="this.value=this.value.toUpperCase()"></div>
+        <div class="form-group"><label class="form-label">Father's Name</label><input type="text" class="form-control" data-field="owner_${ownerCount}_father" oninput="this.value=this.value.toUpperCase()"></div>
+        <div class="form-group"><label class="form-label">Owner's Address</label><input type="text" class="form-control" data-field="owner_${ownerCount}_address" oninput="this.value=this.value.toUpperCase()"></div>`;
     document.getElementById('owner-rows').appendChild(div);
+}
+
+function removeOwnerRow() {
+    const rows = document.querySelectorAll('#owner-rows .owner-row');
+    if (rows.length <= 1) {
+        UI.showToast('At least one owner is required.', 'error');
+        return;
+    }
+    rows[rows.length - 1].remove();
+    ownerCount--;
 }
 
 // ── Valuer / recipient auto-fill ─────────────────────────────
@@ -838,7 +855,7 @@ function handlePhotoUpload(input) {
 function renderPhotoGrid() {
     const grid = document.getElementById('photo-upload-grid');
     grid.innerHTML = uploadedPhotos.map((p, i) => `
-        <div style="border-radius:var(--radius-sm);border:1px solid var(--gray-200);overflow:hidden;display:flex;flex-direction:column;">
+        <div data-index="${i}" style="border-radius:var(--radius-sm);border:1px solid var(--gray-200);overflow:hidden;display:flex;flex-direction:column;cursor:grab;">
             <div style="position:relative;aspect-ratio:4/3;">
                 <img src="${p.dataUrl}" style="width:100%;height:100%;object-fit:cover;">
                 <button onclick="removePhoto(${i})" style="position:absolute;top:4px;right:4px;background:rgba(220,38,38,0.9);color:white;border:none;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;">x</button>
@@ -849,9 +866,22 @@ function renderPhotoGrid() {
                     style="width:100%;font-size:0.75rem;border:none;background:transparent;outline:none;color:#333;padding:2px 0;">
             </div>
         </div>`).join('');
+
     const lbl = document.getElementById('photo-upload-label');
     if (lbl) lbl.style.display = uploadedPhotos.length >= 12 ? 'none' : 'inline-flex';
+
+    Sortable.create(grid, {
+        animation: 150,
+        ghostClass: 'sortable-ghost',
+        onEnd(evt) {
+            const moved = uploadedPhotos.splice(evt.oldIndex, 1)[0];
+            uploadedPhotos.splice(evt.newIndex, 0, moved);
+            renderPhotoGrid();
+            setSaveStatus('unsaved');
+        }
+    });
 }
+
 function removePhoto(i) { uploadedPhotos.splice(i, 1); renderPhotoGrid(); setSaveStatus('unsaved'); }
 
 function handleQRUpload(input) {
