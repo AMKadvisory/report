@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EBL Land &amp; Building – AMK Portal</title>
+    <title>EBL Land &amp; Building - AMK Portal</title>
     <link rel="stylesheet" href="css/style.css">
     <style>
         body { background: var(--gray-100); }
@@ -55,7 +55,7 @@
 <body>
 
 <nav class="navbar">
-    <div class="navbar-brand">AMK <span>Associates</span></div>
+    <div class="navbar-brand">AMK <span>Advisory</span></div>
     <div class="navbar-right">
         <span class="save-indicator"><span class="save-dot" id="save-dot"></span><span id="save-status">Not saved</span></span>
         <a href="dashboard.html" class="btn btn-outline btn-sm">Dashboard</a>
@@ -343,17 +343,32 @@
                 </div>
                 <h3 style="font-family:var(--font-display);color:var(--navy);margin:1.5rem 0 1rem;">G. Setback Comparison</h3>
                 <div class="floor-table-wrapper">
-                    <table class="floor-table">
-                        <thead><tr><th>Direction</th><th>As Per Approved Plan (Ft.)</th><th>As Per Physical (Ft.)</th><th>Deviation (Ft.) = b−a</th></tr><tr><th></th><th>a</th><th>b</th><th>c</th></tr></thead>
+                    <table class="floor-table" id="setbackTable">
+                        <thead>
+                            <tr>
+                                <th>Direction</th>
+                                <th>As Per Approved Plan (Ft.)</th>
+                                <th>As Per Physical (Ft.)</th>
+                                <th>Deviation (Ft.)</th>
+                            </tr>
+                        </thead>
                         <tbody>
-                            <tr><td>North</td>    <td><input type="text" data-field="setback_north_plan" oninput="eblCalcSetback(this)"></td><td><input type="text" data-field="setback_north_phys" oninput="eblCalcSetback(this)"></td><td><input type="text" data-field="setback_north_dev" readonly></td></tr>
-                            <tr><td>South</td>    <td><input type="text" data-field="setback_south_plan" oninput="eblCalcSetback(this)"></td><td><input type="text" data-field="setback_south_phys" oninput="eblCalcSetback(this)"></td><td><input type="text" data-field="setback_south_dev" readonly></td></tr>
-                            <tr><td>East</td>     <td><input type="text" data-field="setback_east_plan"  oninput="eblCalcSetback(this)"></td><td><input type="text" data-field="setback_east_phys"  oninput="eblCalcSetback(this)"></td><td><input type="text" data-field="setback_east_dev"  readonly></td></tr>
-                            <tr><td>West</td>     <td><input type="text" data-field="setback_west_plan"  oninput="eblCalcSetback(this)"></td><td><input type="text" data-field="setback_west_phys"  oninput="eblCalcSetback(this)"></td><td><input type="text" data-field="setback_west_dev"  readonly></td></tr>
-                            <tr><td>Road (N/S)</td><td><input type="text" data-field="setback_ns_plan"   oninput="eblCalcSetback(this)"></td><td><input type="text" data-field="setback_ns_phys"    oninput="eblCalcSetback(this)"></td><td><input type="text" data-field="setback_ns_dev"    readonly></td></tr>
-                            <tr><td>Road (E/W)</td><td><input type="text" data-field="setback_ew_plan"   oninput="eblCalcSetback(this)"></td><td><input type="text" data-field="setback_ew_phys"    oninput="eblCalcSetback(this)"></td><td><input type="text" data-field="setback_ew_dev"    readonly></td></tr>
+                            <tr><td>North</td><td><input type="text" data-field="setback_north_plan" oninput="eblCalcSetback(this)"></td><td><input type="text" data-field="setback_north_phys" oninput="eblCalcSetback(this)"></td><td><input type="text" readonly></td></tr>
+                            <tr><td>South</td><td><input type="text" data-field="setback_south_plan" oninput="eblCalcSetback(this)"></td><td><input type="text" data-field="setback_south_phys" oninput="eblCalcSetback(this)"></td><td><input type="text" readonly></td></tr>
+                            <tr><td>East</td> <td><input type="text" data-field="setback_east_plan"  oninput="eblCalcSetback(this)"></td><td><input type="text" data-field="setback_east_phys"  oninput="eblCalcSetback(this)"></td><td><input type="text" readonly></td></tr>
+                            <tr><td>West</td> <td><input type="text" data-field="setback_west_plan"  oninput="eblCalcSetback(this)"></td><td><input type="text" data-field="setback_west_phys"  oninput="eblCalcSetback(this)"></td><td><input type="text" readonly></td></tr>
                         </tbody>
+                        <tbody id="dynamicRows"></tbody>
                     </table>
+                    
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <button type="button" onclick="addRow()" style="background: var(--navy); color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer;">
+                            + Add Row
+                        </button>
+                        <button type="button" onclick="removeLastRow()" style="background: #dc3545; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer;">
+                            - Remove Row
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -664,12 +679,26 @@ function eblCalcDepreciation() {
 
 // ── Floor area deviation ──────────────────────────────────
 function eblCalcAreaDev(input) {
-    const row=input.closest('tr'), ins=row.querySelectorAll('input');
-    const plan=parseFloat((ins[1].value||'').replace(/,/g,''))||0;
-    const phys=parseFloat((ins[2].value||'').replace(/,/g,''))||0;
-    const dev=phys-plan;
-    ins[3].value=(plan||phys)?eblFmtN(dev):'';
-    ins[4].value=plan?(dev/plan*100).toFixed(2)+'%':'';
+    const row = input.closest('tr');
+    const cells = row.querySelectorAll('input');
+    
+    const areaplan = parseFloat(cells[1].value) || 0;
+    const areaPhysical = parseFloat(cells[2].value) || 0;
+    
+    const deviationSft = areaPhysical - areaplan;
+    const deviationPct = areaplan !== 0 ? (deviationSft / areaplan) * 100 : 0;
+    
+    cells[3].value = deviationSft.toFixed(2);
+    cells[4].value = deviationPct.toFixed(2);
+
+    // ✅ Auto-fill Deviation (Plinth) % if this row is Plinth
+    const floorLabel = cells[0].value.trim().toLowerCase();
+    if (floorLabel === 'plinth') {
+        const plinthField = document.querySelector('[data-field="deviation_plinth"]');
+        if (plinthField) {
+            plinthField.value = deviationPct.toFixed(2);
+        }
+    }
 }
 
 // ── Construction Work % ───────────────────────────────────
@@ -842,6 +871,47 @@ function eblRemoveFloor() {
     setSaveStatus('unsaved');
 }
 
+let setbackRowCount = 0; 
+
+function eblCalcSetback(input) {
+    const row = input.closest('tr');
+    const ins = row.querySelectorAll('input');
+
+    const len = ins.length;
+    const a = parseFloat(ins[len - 3].value) || 0;
+    const b = parseFloat(ins[len - 2].value) || 0;
+
+    if (ins[len - 3].value || ins[len - 2].value) {
+        const diff = Math.abs(b - a).toFixed(2);
+        ins[len - 1].value = `(${diff})`;
+    } else {
+        ins[len - 1].value = '';
+    }
+}
+
+function addRow() {
+    const tbody = document.getElementById('dynamicRows');
+    const row = document.createElement('tr');
+    const idx = setbackRowCount++;   // ← assign then increment
+
+    row.innerHTML = `
+        <td><input type="text" name="setback_custom_${idx}_label" placeholder="Enter Road" style="width: 90%;"></td>
+        <td><input type="text" name="setback_custom_${idx}_plan"  oninput="eblCalcSetback(this)"></td>
+        <td><input type="text" name="setback_custom_${idx}_phys"  oninput="eblCalcSetback(this)"></td>
+        <td><input type="text" readonly></td>
+    `;
+
+    tbody.appendChild(row);
+}
+
+function removeLastRow() {
+    const tbody = document.getElementById('dynamicRows');
+    if (tbody.lastElementChild) {
+        tbody.removeChild(tbody.lastElementChild);
+        setbackRowCount = Math.max(0, setbackRowCount - 1); // ← keep counter in sync
+    }
+}
+
 // ── Photos (unified for all annexures) ───────────────────
 const eblPhotoStores = {
     'ebl-ann1': [], 'ebl-ann2': [], 'ebl-ann3': [], 'ebl-ann4': [],
@@ -922,6 +992,15 @@ function collectFormData() {
             present_phys:ins[8]?.value||'',  present_phys_manual:ins[8]?.dataset.manual||''
         };
     });
+    // Setback dynamic rows
+    data._setback_dynamic_rows = [...document.querySelectorAll('#dynamicRows tr')].map(row => {
+        const ins = row.querySelectorAll('input');
+        return {
+            label: ins[0]?.value || '',
+            plan:  ins[1]?.value || '',
+            phys:  ins[2]?.value || ''
+        };
+    });
     data._ann1_photos = eblPhotoStores['ebl-ann1'];
     data._ann2_photos = eblPhotoStores['ebl-ann2'];
     data._ann3_photos = eblPhotoStores['ebl-ann3'];
@@ -994,6 +1073,23 @@ function populateFormData(fd) {
                 if(r.est_phys_manual)     ins[5].dataset.manual = '1';
                 if(r.present_plan_manual) ins[7].dataset.manual = '1';
                 if(r.present_phys_manual) ins[8].dataset.manual = '1';
+            });
+        }
+        // Restore setback dynamic rows
+        if (Array.isArray(fd._setback_dynamic_rows) && fd._setback_dynamic_rows.length) {
+            document.getElementById('dynamicRows').innerHTML = '';
+            setbackRowCount = 0;
+            fd._setback_dynamic_rows.forEach(r => {
+                const idx = setbackRowCount++;
+                const tbody = document.getElementById('dynamicRows');
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><input type="text" placeholder="Enter Road" style="width: 90%;" value="${r.label || ''}"></td>
+                    <td><input type="text" oninput="eblCalcSetback(this)" value="${r.plan || ''}"></td>
+                    <td><input type="text" oninput="eblCalcSetback(this)" value="${r.phys || ''}"></td>
+                    <td><input type="text" readonly value="${(r.plan || r.phys) ? '(' + Math.abs(parseFloat(r.phys||0) - parseFloat(r.plan||0)).toFixed(2) + ')' : ''}"></td>
+                `;
+                tbody.appendChild(tr);
             });
         }
     }
