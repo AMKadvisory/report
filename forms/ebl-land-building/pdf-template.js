@@ -552,9 +552,42 @@ const EBLLandBuildingPDF = {
             : '';
         [['Structure Type',                  v('structure_type')],
          ['Foundation Type',                 v('foundation_type')],
-         ['Number of Stories',
-           '(a) As per Plan: ' + v('stories_plan') + ' Storied  /  (b) As per Physical: ' + v('stories_physical') + ' Storied'],
-         ['Approval Authority',              v('approval_authority')],
+        ].forEach(([l, val]) => { y = kvRow(y, l, val, 68); });
+
+        // Number of Stories row with conditional red highlight
+        {
+            const label = 'Number of Stories';
+            const planVal = parseInt(v('stories_plan')) || 0;
+            const physVal = parseInt(v('stories_physical')) || 0;
+            const lw = 68;
+            const vw = CW - lw - 4;
+            const lineStr = '(a) As per Plan: ' + v('stories_plan') + ' Storied  /  (b) As per Physical: ';
+            const physStr = v('stories_physical') + ' Storied';
+            const rh = 5.5;
+            if (y + rh > CONTENT_BOTTOM) y = newPage();
+            doc.setDrawColor(0,0,0); doc.setLineWidth(0.2);
+            doc.setFillColor(255,255,255); doc.rect(ML,      y, lw,  rh, 'FD');
+            doc.setFillColor(255,255,255); doc.rect(ML+lw,   y, 4,   rh, 'FD');
+            doc.rect(ML+lw+4, y, vw, rh, 'FD');
+            bold(10);   doc.text(label,  ML+1.5,   y+4);
+            normal(10); doc.text(':',    ML+lw+1.2, y+4);
+            // Draw the static part of the value
+            doc.text(lineStr, ML+lw+5.5, y+4);
+            // Draw stories_physical in red if it exceeds plan, otherwise normal black
+            const lineStrW = doc.getTextWidth(lineStr);
+            if (physVal > planVal) {
+                bold(10);
+                doc.setTextColor(220, 38, 38); // set red AFTER bold resets color
+            } else {
+                normal(10);
+                doc.setTextColor(0, 0, 0);
+            }
+            doc.text(physStr, ML+lw+5.5+lineStrW, y+4);
+            doc.setTextColor(0, 0, 0); // reset color
+            normal(10);
+            y += rh;
+        }
+        [['Approval Authority',              v('approval_authority')],
          ['Plan No. & Date',                'Sarok No: ' + v('plan_no') + '  Date: ' + dt('plan_date')],
          ['Occupancy Category',              v('occupancy_category')],
          ['Age of Structure',                ageStr],
@@ -606,16 +639,70 @@ const EBLLandBuildingPDF = {
         // G. Setback
         y = heading(y, 'G. Setback Comparison:');
         const gCws = [34, 42, 50, 42];
-        y = tblHeader(y, ['Direction','As Per Approved Plan (Ft.)','As Per Physical Inspection (Ft.)','Deviation (Ft.)'], gCws);
-        y = formulaRow(y, ['','a','b','c = b-a'], gCws);
-        [['North','setback_north'], ['South','setback_south'], ['East','setback_east'],
-         ['West','setback_west'],  ['Road (N/S)','setback_ns'], ['Road (E/W)','setback_ew'],
-        ].forEach(([label, key]) => {
-            const plan = parseFloat(fd[key+'_plan']||0)||0;
-            const phys = parseFloat(fd[key+'_phys']||0)||0;
-            const dev = plan||phys ? `(${Math.abs(phys-plan).toFixed(2)})` : '';
-            y = tblRow(y, [label, plan||'', phys||'', dev], gCws);
+
+        // Header heights
+        const gHdrH = 7;   // top header row height
+        const gFmlH = 5;   // formula row height
+        const gTotalHdrH = gHdrH + gFmlH;
+
+        if (y + gTotalHdrH > CONTENT_BOTTOM) y = newPage();
+        doc.setDrawColor(0,0,0); doc.setLineWidth(0.2);
+
+        // Column x positions
+        const gXPos = gCws.reduce((acc, w, i) => {
+            acc.push(i === 0 ? ML : acc[i-1] + gCws[i-1]);
+            return acc;
+        }, []);
+
+        // Helper: draw cell with centered wrapped text
+        const gHdrCell = (x, y, w, h, label, isItalic = false) => {
+            doc.rect(x, y, w, h);
+            isItalic ? italic(8) : bold(9);
+            const ls = doc.splitTextToSize(label, w - 2);
+            const textY = y + (h - (ls.length - 1) * 4.5) / 2 + 1.5;
+            doc.text(ls, x + w / 2, textY, { align: 'center' });
+        };
+
+        // ── ROW 1 — Header ─────────────────────────────────────────
+        // "Direction" spans both rows (rowspan=2)
+        gHdrCell(gXPos[0], y, gCws[0], gTotalHdrH, 'Direction');
+
+        // Other 3 headers — normal height only
+        gHdrCell(gXPos[1], y, gCws[1], gHdrH, 'As Per Approved Plan (Ft.)');
+        gHdrCell(gXPos[2], y, gCws[2], gHdrH, 'As Per Physical Inspection (Ft.)');
+        gHdrCell(gXPos[3], y, gCws[3], gHdrH, 'Deviation (Ft.)');
+
+        // ── ROW 2 — Formula row (cols 1-3 only, col 0 already spanned) ─
+        const gFmlY = y + gHdrH;
+        ['a', 'b', 'c = b - a'].forEach((label, i) => {
+            gHdrCell(gXPos[i + 1], gFmlY, gCws[i + 1], gFmlH, label, true);
         });
+
+        y += gTotalHdrH;
+        normal(10);
+
+        // ── DATA ROWS ───────────────────────────────────────────────
+        [
+            ['North', 'setback_north'],
+            ['South', 'setback_south'],
+            ['East',  'setback_east'],
+            ['West',  'setback_west'],
+        ].forEach(([label, key]) => {
+            const plan = parseFloat(fd[key + '_plan'] || 0) || 0;
+            const phys = parseFloat(fd[key + '_phys'] || 0) || 0;
+            const dev  = (plan || phys) ? `(${Math.abs(phys - plan).toFixed(2)})` : '';
+            y = tblRow(y, [label, plan || '', phys || '', dev], gCws);
+        });
+
+        // Dynamic rows
+        const dynSetbackRows = Array.isArray(fd._setback_dynamic_rows) ? fd._setback_dynamic_rows : [];
+        dynSetbackRows.forEach(r => {
+            const plan = parseFloat(r.plan || 0) || 0;
+            const phys = parseFloat(r.phys || 0) || 0;
+            const dev  = (plan || phys) ? `(${Math.abs(phys - plan).toFixed(2)})` : '';
+            y = tblRow(y, [r.label || '', plan || '', phys || '', dev], gCws);
+        });
+
         y += 5;
 
         // FIX 3c: H. Construction % — tblHeader now auto-sizes height, no overflow
