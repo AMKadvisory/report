@@ -288,7 +288,7 @@
                         <span style="font-size:1.2rem;">🖼️</span> Upload Cover Image
                         <input type="file" id="cover-img-input" accept="image/*" style="display:none;" onchange="handleCoverImage(this)">
                     </label>
-                    <p style="margin-top:0.5rem;font-size:0.75rem;color:var(--gray-400);">JPG, PNG. Max 2MB.</p>
+                    <p style="margin-top:0.5rem;font-size:0.75rem;color:var(--gray-400);">JPG, PNG. Max 10MB.</p>
                 </div>
 
             </div>
@@ -811,7 +811,7 @@ let uploadedCoverImage = null;
 
 function handleCoverImage(input) {
     const file = input.files[0]; if (!file) return;
-    if (file.size > 2*1024*1024) { UI.showToast('Image too large (max 2MB)', 'error'); return; }
+    if (file.size > 10*1024*1024) { UI.showToast('Image too large (max 10MB)', 'error'); return; }
     const reader = new FileReader();
     reader.onload = e => {
         uploadedCoverImage = { name: file.name, dataUrl: e.target.result };
