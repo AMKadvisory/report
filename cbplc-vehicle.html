@@ -554,7 +554,7 @@
                     <span style="font-size:1.2rem;">📁</span> Choose Photos (up to 12)
                     <input type="file" id="photo-input" accept="image/*" multiple style="display:none;" onchange="handlePhotoUpload(this)">
                 </label>
-                <p style="margin-top:0.5rem;font-size:0.75rem;color:var(--gray-400);">JPG, PNG supported. Max 12 photos, 2MB each. Stored as base64 in the report.</p>
+                <p style="margin-top:0.5rem;font-size:0.75rem;color:var(--gray-400);">JPG, PNG supported. Max 12 photos, 10MB each.</p>
             </div>
         </div>
 
@@ -576,7 +576,7 @@
                             <span style="font-size:1.2rem;">📲</span> Upload QR Code Image
                             <input type="file" id="qr-input" accept="image/*" style="display:none;" onchange="handleQRUpload(this)">
                         </label>
-                        <p style="margin-top:0.5rem;font-size:0.75rem;color:var(--gray-400);">PNG or JPG. Max 1MB.</p>
+                        <p style="margin-top:0.5rem;font-size:0.75rem;color:var(--gray-400);">PNG or JPG. Max 5MB.</p>
                     </div>
                 </div>
             </div>
@@ -836,12 +836,12 @@ function removeCoverImage() {
 
 let uploadedPhotos = [], uploadedQR = null;
 
-function handlePhotoUpload(input) {
+function (input) {
     const files = Array.from(input.files);
     const remaining = 12 - uploadedPhotos.length;
     if (files.length > remaining) UI.showToast(`Max 12 photos. You can add ${remaining} more.`, 'error');
     files.slice(0, remaining).forEach(file => {
-        if (file.size > 2*1024*1024) { UI.showToast(`${file.name} is too large (max 2MB)`, 'error'); return; }
+        if (file.size > 10*1024*1024) { UI.showToast(`${file.name} is too large (max 10MB)`, 'error'); return; }
         const reader = new FileReader();
         reader.onload = e => {
             uploadedPhotos.push({ name: file.name, caption: file.name.replace(/\.[^/.]+$/, ''), dataUrl: e.target.result });
@@ -886,7 +886,7 @@ function removePhoto(i) { uploadedPhotos.splice(i, 1); renderPhotoGrid(); setSav
 
 function handleQRUpload(input) {
     const file = input.files[0]; if (!file) return;
-    if (file.size > 1*1024*1024) { UI.showToast('QR too large (max 1MB)', 'error'); return; }
+    if (file.size > 5*1024*1024) { UI.showToast('QR too large (max 5MB)', 'error'); return; }
     const reader = new FileReader();
     reader.onload = e => {
         uploadedQR = { name: file.name, dataUrl: e.target.result };
