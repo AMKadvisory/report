@@ -246,11 +246,25 @@ const PDFEngine = {
     async generate(formData, template) {
         UI.showToast('Generating PDF…', 'info', 15000);
         try {
-            await template.render(formData, this);
+            await template.render(formData, this, 'download');
             UI.showToast('PDF downloaded!', 'success');
         } catch(err) {
             console.error('PDF error:', err);
             UI.showToast('PDF failed: ' + err.message, 'error');
+        }
+    },
+
+    // ── Preview: renders PDF and opens it in a new browser tab ──
+    async preview(formData, template) {
+        UI.showToast('Generating preview…', 'info', 15000);
+        try {
+            const blobUrl = await template.render(formData, this, 'preview');
+            if (!blobUrl) throw new Error('No preview URL returned from template.');
+            window.open(blobUrl, '_blank');
+            UI.showToast('Preview opened!', 'success');
+        } catch(err) {
+            console.error('PDF preview error:', err);
+            UI.showToast('Preview failed: ' + err.message, 'error');
         }
     }
 };
