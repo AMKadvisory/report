@@ -7,7 +7,7 @@
 // ═══════════════════════════════════════════════════════════
 const VehicleValuationPDF = {
 
-    async render(formData, E) {
+    async render(formData, E, mode) {
         const fd = formData || {};
         // Shorthand helpers that close over fd
         const v  = (k, fb='') => E.v(fd, k, fb);
@@ -146,8 +146,13 @@ const VehicleValuationPDF = {
         const c2L = doc.splitTextToSize('The report has been prepared based on our physical inspection, verification, necessary documents as provided by concern office/individual, local market analysis and assessment to the best of our knowledge.\n\nFor any query, please feel free to contact us.', CW);
         doc.text(c2L, ML, y); y += c2L.length*5+10;
         doc.text('With best regards,', ML, y); y += 24;
+
+        // Signatures
         doc.setDrawColor(0,0,0);
-        doc.line(ML, y, ML+50, y); doc.line(ML+100, y, ML+150, y); y += 5;
+        doc.line(ML, y, ML+50, y);
+        doc.line(ML+100, y, ML+150, y); 
+        y += 5;
+        
         E.bold(10);
         doc.text(v('valuer_1_name'), ML, y); doc.text(v('valuer_2_name'), ML+100, y); y += 6;
         E.normal(10);
@@ -447,6 +452,7 @@ const VehicleValuationPDF = {
         const identifier = (ref && account) ? `${ref}_${account}` : (ref || account || 'Report');
 
         const filename = `INCOMING-${identifier}.pdf`;
-        E.save(filename);
+        if (mode === 'preview') return E.doc.output('bloburl');
+        else E.save(filename);
     }
 };
