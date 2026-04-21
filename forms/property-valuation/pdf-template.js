@@ -8,7 +8,7 @@
 // ═══════════════════════════════════════════════════════════
 const PropertyValuationPDF = {
 
-    async render(formData, E) {
+    async render(formData, E, mode) {
         const fd  = formData || {};
         const v   = (k, fb = '') => E.v(fd, k, fb);
         const dt  = (k)          => E.dt(fd, k);
@@ -37,7 +37,7 @@ const PropertyValuationPDF = {
             const rh   = Math.max(6, lines.length * 4.5 + 2);
             if (y + rh > CONTENT_BOTTOM) y = E.newPage();
             doc.setDrawColor(0,0,0); doc.setLineWidth(0.2);
-            doc.setFillColor(240,240,240); doc.rect(ML,       y, lw, rh, 'FD');
+            doc.setFillColor(255,255,255); doc.rect(ML,       y, lw, rh, 'FD');
             doc.setFillColor(255,255,255); doc.rect(ML+lw,    y, 4,  rh, 'FD');
             doc.rect(ML+lw+4, y, vw, rh, 'FD');
             E.bold(10);   doc.text(String(label), ML+1.5,    y+4);
@@ -110,18 +110,28 @@ const PropertyValuationPDF = {
         // ════════════════════════════════════════════════════
 
         // Title
-        E.bold(16);
-        doc.text('INSPECTION SURVEY & VALUATION REPORT', PW/2, y+5, { align: 'center' });
-        y += 16;
+        const titleY = 80;
+        E.bold(18);
+        doc.text('INSPECTION SURVEY & VALUATION REPORT', PW/2, titleY, { align:'center' });
 
-        // Reference table
+        // Reference fields — centered block
+        let ry = titleY + 50;
+        const refLabelW = 52, refColonW = 4;
+        const refStartX = (PW - refLabelW - refColonW - 60) / 2;
         [
             ['Reference Account Name', v('reference_account_name')],
             ['Reference No.',          v('reference_no')],
             ['W/O Received Date',      dt('wo_received_date')],
             ['Date of Inspection',     dt('date_of_inspection')],
-        ].forEach(([lbl, val]) => { y = kvRow(y, lbl, val); });
-        y += 3;
+        ].forEach(([lbl, val]) => {
+            E.bold(10);
+            doc.text(lbl, refStartX, ry);
+            doc.text(':', refStartX + refLabelW, ry);
+            doc.text(String(val), refStartX + refLabelW + refColonW + 1, ry);
+            ry += 6;
+        });
+
+        ry += 10; // ← gap between reference and surveyor blocks
 
         // Surveyor table
         [
@@ -129,35 +139,46 @@ const PropertyValuationPDF = {
             ['Designation',     v('surveyor_designation')],
             ['NID Number',      v('surveyor_nid')],
             ['Contact Number',  v('surveyor_contact')],
-        ].forEach(([lbl, val]) => { y = kvRow(y, lbl, val); });
-        y += 5;
+        ].forEach(([lbl, val]) => {
+            E.bold(10);
+            doc.text(lbl, refStartX, ry);
+            doc.text(':', refStartX + refLabelW, ry);
+            doc.text(String(val), refStartX + refLabelW + refColonW + 1, ry);
+            ry += 6;
+        });
 
-        // Submitted by / Submitted to boxes
+
+        // Submitted boxes
+        const boxTop = 220;
         const rNameLines = doc.splitTextToSize(v('recipient_name'), CW/2-14);
-        const addrLines  = doc.splitTextToSize(v('recipient_address'), CW/2-14);
-        const boxH = Math.max(38, 14 + (rNameLines.length + addrLines.length) * 5);
+        const addrL      = doc.splitTextToSize(v('recipient_address'), CW/2-14);
+        const boxH = Math.max(40, 14 + Math.max(6, rNameLines.length + addrL.length) * 5.5);
+
         doc.setDrawColor(0,0,0); doc.setFillColor(255,255,255);
-        doc.rect(ML,          y, CW/2-2, boxH, 'FD');
-        doc.rect(ML+CW/2+2,   y, CW/2-2, boxH, 'FD');
 
-        // Left — Submitted by (static)
-        let by = y + 5;
-        E.bold(10); doc.text('Submitted by:', ML+3, by); by += 5.5;
-        E.bold(10); doc.text('AMK Associates Limited', ML+3, by); by += 5;
-        E.normal(9);
-        ['68, Khilgaon Chowdhurypara (4th floor)',
-         'DIT Road, Rampura, Dhaka-1219',
-         'E-mail: amkassociatesbd@gmail.com',
-         'Website: www.amkassociatesltd.com',
-         'Contact: +88 01841-132714'
-        ].forEach(l => { doc.text(l, ML+3, by); by += 4.5; });
+        // Draw outer rectangle spanning both boxes (single shared border)
+        doc.rect(ML, boxTop, CW, boxH, 'FD');
 
-        // Right — Submitted to
-        const rx = ML + CW/2 + 5;
-        let ty = y + 5;
-        E.bold(10); doc.text('Submitted to:', rx, ty); ty += 5.5;
-        rNameLines.forEach(l => { E.bold(10); doc.text(l, rx, ty); ty += 5; });
-        E.normal(9); addrLines.forEach(l => { doc.text(l, rx, ty); ty += 4.5; });
+        // Draw only the vertical divider line in the middle
+        const midX = ML + CW/2;
+        doc.line(midX, boxTop, midX, boxTop + boxH);
+
+        let by = boxTop + 6;
+        E.bold(10);  doc.text('Submitted by:', ML+3, by); by += 6;
+        E.bold(10);  doc.text('AMK Associates Limited', ML+3, by); by += 5.5;
+        E.normal(10);
+        doc.text('68, Khilgaon Chowdhury Para (4th floor)', ML+3, by); by += 5;
+        doc.text('DIT Road Rampura, Dhaka-1219', ML+3, by); by += 5;
+        doc.text('E-mail: www.amkassociatesbd@gmail.com', ML+3, by); by += 5;
+        doc.text('Web: www.amkassociatesbd.com', ML+3, by); by += 5;
+        doc.text('Contact: 01841132714', ML+3, by);
+
+        const rx = midX + 3;
+        let ty = boxTop + 6;
+        E.bold(10); doc.text('Submitted to:', rx, ty); ty += 6;
+        rNameLines.forEach(l => { E.bold(10); doc.text(l, rx, ty); ty += 5.5; });
+        E.normal(10); addrL.forEach(l => { doc.text(l, rx, ty); ty += 5; });
+
 
         // ════════════════════════════════════════════════════
         //  PAGE 2 — COVER LETTER  (Sheet 2)
@@ -602,7 +623,7 @@ const PropertyValuationPDF = {
                     const fmt2 = photos[i].dataUrl.startsWith('data:image/png') ? 'PNG' : 'JPEG';
                     doc.addImage(photos[i].dataUrl, fmt2, imgX, iy, imgW, imgH);
                 } catch(e) {
-                    doc.setFillColor(240,240,240); doc.rect(imgX, iy, imgW, imgH, 'FD');
+                    doc.setFillColor(255,255,255); doc.rect(imgX, iy, imgW, imgH, 'FD');
                 }
                 doc.setDrawColor(0,0,0); doc.setLineWidth(0.4);
                 doc.rect(imgX, iy, imgW, imgH);
@@ -613,8 +634,9 @@ const PropertyValuationPDF = {
             }
         }
 
-        // Save
+       // Save or Preview PDF
         const filename = 'PropertyValuation_'+(v('reference_no')||v('valuation_ref_no')||'Report')+'.pdf';
-        E.save(filename);
+        if (mode === 'preview') return E.doc.output('bloburl');
+        else E.save(filename);
     }
 };
