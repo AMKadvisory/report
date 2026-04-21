@@ -18,7 +18,7 @@
 // ═══════════════════════════════════════════════════════════
 const EBLLandBuildingPDF = {
 
-    async render(formData, mode) {
+    async render(formData, _E, mode) {
         const fd = formData || {};
 
         // ── Value helpers (were E.v / E.dt) ─────────────────
