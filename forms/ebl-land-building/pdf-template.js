@@ -18,7 +18,7 @@
 // ═══════════════════════════════════════════════════════════
 const EBLLandBuildingPDF = {
 
-    async render(formData) {
+    async render(formData, mode) {
         const fd = formData || {};
 
         // ── Value helpers (were E.v / E.dt) ─────────────────
@@ -1241,6 +1241,10 @@ const EBLLandBuildingPDF = {
 
         // Save (was E.save())
         const filename = 'EBL_LandBuilding_' + (v('reference_account_name') || v('letter_ref') || 'Report') + '.pdf';
-        doc.save(filename);
+        if (mode === 'preview') {
+            return doc.output('bloburl');
+        } else {
+            doc.save(filename);
+        }
     }
 };
