@@ -6,7 +6,7 @@
 // ═══════════════════════════════════════════════════════════
 const CBLVehicleValuationPDF = {
 
-    async render(formData, mode) {
+    async render(formData, _E, mode) {
         const fd = formData || {};
 
         // ══════════════════════════════════════════════════════
