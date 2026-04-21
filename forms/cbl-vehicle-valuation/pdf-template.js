@@ -6,7 +6,7 @@
 // ═══════════════════════════════════════════════════════════
 const CBLVehicleValuationPDF = {
 
-    async render(formData) {
+    async render(formData, mode) {
         const fd = formData || {};
 
         // ══════════════════════════════════════════════════════
@@ -699,6 +699,7 @@ const CBLVehicleValuationPDF = {
         const ref      = sanitize(v('letter_ref'));
         const account  = sanitize(v('ac_title') || v('reference_account_name'));
         const identifier = (ref && account) ? `${ref}_${account}` : (ref || account || 'Report');
-        doc.save(`${identifier}.pdf`);
+        if (mode === 'preview') return doc.output('bloburl');
+        else doc.save(`${identifier}.pdf`);
     }
 };
