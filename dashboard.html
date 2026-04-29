@@ -62,6 +62,7 @@
                 <a href="form.html"                   style="display:block;padding:0.75rem 1.25rem;font-size:0.875rem;color:var(--navy);text-decoration:none;transition:background var(--transition);" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='white'">🚗 BBPLC Vehicle Valuation</a>
                 <!-- FIX #3 (dashboard link): href uses %20 to safely encode the space in the filename -->
                 <a href="cbplc-vehicle.html"        style="display:block;padding:0.75rem 1.25rem;font-size:0.875rem;color:var(--navy);text-decoration:none;transition:background var(--transition);" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='white'">🚗 CBPLC Vehicle Valuation</a>
+                <a href="ebl-sme-land-form.html"      style="display:block;padding:0.75rem 1.25rem;font-size:0.875rem;color:var(--navy);text-decoration:none;transition:background var(--transition);" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='white'">🏠 EBL SME Land</a>
                 <a href="property-form.html"          style="display:block;padding:0.75rem 1.25rem;font-size:0.875rem;color:var(--navy);text-decoration:none;transition:background var(--transition);" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='white'">🏠 EBL SME Land &amp; Building</a>
                 <a href="ebl-land-building-form.html" style="display:block;padding:0.75rem 1.25rem;font-size:0.875rem;color:var(--navy);text-decoration:none;transition:background var(--transition);" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='white'">🏗️ EBL HL Land &amp; Building</a>
                 <a href="ebl-flat-form.html"          style="display:block;padding:0.75rem 1.25rem;font-size:0.875rem;color:var(--navy);text-decoration:none;transition:background var(--transition);" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='white'">🏢 EBL HL Flat</a>
@@ -74,7 +75,7 @@
             <div class="page-title">My Reports</div>
             <div class="page-subtitle">All your submitted and in-progress valuation reports</div>
         </div>
-        <button class="btn btn-outline btn-sm" onclick="loadSubmissions()">Refresh</button>
+        <button class="btn btn-outline btn-sm" onclick="loadSubmissions(true)">Refresh</button>
     </div>
 
     <!-- Vehicle Valuation Section -->
@@ -111,6 +112,25 @@
             </div>
         </div>
         <div id="table-cbplc">
+            <div class="empty-table">Loading...</div>
+        </div>
+    </div>
+
+    <!-- EBL SME Land Section -->
+    <div class="submissions-table-wrapper">
+        <div class="table-section-header">
+            <div class="table-section-title">
+                🏠 EBL SME Land
+                <span class="table-section-count" id="count-ebl-sme-land">0</span>
+            </div>
+            <div class="section-filter-tabs">
+                <button class="section-filter-tab active" onclick="filterSection('ebl-sme-land','all',this)">All</button>
+                <button class="section-filter-tab" onclick="filterSection('ebl-sme-land','draft',this)">Drafts</button>
+                <button class="section-filter-tab" onclick="filterSection('ebl-sme-land','submitted',this)">Submitted</button>
+                <button class="section-filter-tab" onclick="filterSection('ebl-sme-land','reviewed',this)">Reviewed</button>
+            </div>
+        </div>
+        <div id="table-ebl-sme-land">
             <div class="empty-table">Loading...</div>
         </div>
     </div>
@@ -187,12 +207,13 @@
 <script src="forms/ebl-land-building/pdf-template.js"></script>
 <script src="forms/cbl-vehicle-valuation/pdf-template.js"></script>
 <script src="forms/ebl-flat/pdf-template.js"></script>
+<script src="forms/ebl-sme-land/pdf-template.js"></script>
 
 <script>
 let currentUserId = null;
 let allSubmissions = [];
 // Track active filter per section
-const sectionFilters = { vehicle: 'all', cbplc: 'all', property: 'all', ebl: 'all', 'ebl-flat': 'all' };
+const sectionFilters = { vehicle: 'all', cbplc: 'all', 'ebl-sme-land': 'all', property: 'all', ebl: 'all', 'ebl-flat': 'all' };
 
 async function init() {
     const session = await Auth.requireAuth();
@@ -206,18 +227,65 @@ async function init() {
     await loadSubmissions();
 }
 
-async function loadSubmissions() {
-    ['table-vehicle','table-cbplc','table-property','table-ebl','table-ebl-flat'].forEach(id => {
+// ── Egress optimisation ──────────────────────────────────────────────────────
+// Only the columns needed to render the table are fetched on list load.
+// form_data (the heavy blob) is already fetched on-demand inside
+// downloadReport / previewReport via a single-row select.
+const SUBMISSION_COLS = 'id, status, updated_at, form_type, form_data';
+const CACHE_KEY       = 'amk_submissions_cache';
+const CACHE_TTL_MS    = 5 * 60 * 1000; // 5 minutes
+
+function getCachedSubmissions() {
+    try {
+        const raw = sessionStorage.getItem(CACHE_KEY);
+        if (!raw) return null;
+        const { userId, data, timestamp } = JSON.parse(raw);
+        if (userId !== currentUserId) return null;          // different user
+        if (Date.now() - timestamp > CACHE_TTL_MS) return null; // stale
+        return data;
+    } catch { return null; }
+}
+
+function setCachedSubmissions(data) {
+    try {
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify({
+            userId: currentUserId,
+            data,
+            timestamp: Date.now()
+        }));
+    } catch { /* sessionStorage full — silently skip caching */ }
+}
+
+async function loadSubmissions(forceRefresh = false) {
+    const TABLE_IDS = ['table-vehicle','table-cbplc','table-ebl-sme-land','table-property','table-ebl','table-ebl-flat'];
+
+    // Serve from cache when available and not forced
+    if (!forceRefresh) {
+        const cached = getCachedSubmissions();
+        if (cached) {
+            allSubmissions = cached;
+            renderAllSections();
+            return;
+        }
+    }
+
+    TABLE_IDS.forEach(id => {
         document.getElementById(id).innerHTML = '<div class="empty-table">Loading...</div>';
     });
     try {
-        const { data, error } = await db.from('submissions').select('*').eq('user_id', currentUserId).order('updated_at', { ascending: false });
+        const { data, error } = await db
+            .from('submissions')
+            .select(SUBMISSION_COLS)
+            .eq('user_id', currentUserId)
+            .order('updated_at', { ascending: false });
         if (error) throw error;
         allSubmissions = data;
+        setCachedSubmissions(data);
         renderAllSections();
     } catch(err) {
-        ['table-vehicle','table-cbplc','table-property','table-ebl','table-ebl-flat'].forEach(id => {
-            document.getElementById(id).innerHTML = `<div class="empty-table" style="color:var(--danger);">Failed to load: ${err.message}</div>`;
+        TABLE_IDS.forEach(id => {
+            document.getElementById(id).innerHTML =
+                `<div class="empty-table" style="color:var(--danger);">Failed to load: ${err.message}</div>`;
         });
     }
 }
@@ -226,6 +294,7 @@ function getFormType(sub) {
     const fd = sub.form_data || {};
     const type = fd._formType || sub.form_type || 'cbplc-vehicle-valuation';
     if (type === 'ebl-flat')         return 'ebl-flat';
+    if (type === 'ebl-sme-land')     return 'ebl-sme-land';
     if (type === 'ebl-land-building') return 'ebl';
     if (type === 'property-valuation') return 'property';
     if (type === 'cbplc-vehicle-valuation') return 'cbplc';
@@ -233,23 +302,25 @@ function getFormType(sub) {
 }
 
 function renderAllSections() {
-    const grouped = { vehicle: [], cbplc: [], property: [], ebl: [], 'ebl-flat': [] };
+    const grouped = { vehicle: [], cbplc: [], 'ebl-sme-land': [], property: [], ebl: [], 'ebl-flat': [] };
     allSubmissions.forEach(sub => {
         const t = getFormType(sub);
         grouped[t].push(sub);
     });
 
-    document.getElementById('count-vehicle').textContent   = grouped.vehicle.length;
-    document.getElementById('count-cbplc').textContent     = grouped.cbplc.length;
-    document.getElementById('count-property').textContent  = grouped.property.length;
-    document.getElementById('count-ebl').textContent       = grouped.ebl.length;
-    document.getElementById('count-ebl-flat').textContent  = grouped['ebl-flat'].length;
+    document.getElementById('count-vehicle').textContent        = grouped.vehicle.length;
+    document.getElementById('count-cbplc').textContent          = grouped.cbplc.length;
+    document.getElementById('count-ebl-sme-land').textContent   = grouped['ebl-sme-land'].length;
+    document.getElementById('count-property').textContent       = grouped.property.length;
+    document.getElementById('count-ebl').textContent            = grouped.ebl.length;
+    document.getElementById('count-ebl-flat').textContent       = grouped['ebl-flat'].length;
 
-    renderTable('vehicle',   grouped.vehicle,     sectionFilters.vehicle);
-    renderTable('cbplc',     grouped.cbplc,       sectionFilters.cbplc);
-    renderTable('property',  grouped.property,    sectionFilters.property);
-    renderTable('ebl',       grouped.ebl,         sectionFilters.ebl);
-    renderTable('ebl-flat',  grouped['ebl-flat'], sectionFilters['ebl-flat']);
+    renderTable('vehicle',       grouped.vehicle,            sectionFilters.vehicle);
+    renderTable('cbplc',         grouped.cbplc,              sectionFilters.cbplc);
+    renderTable('ebl-sme-land',  grouped['ebl-sme-land'],    sectionFilters['ebl-sme-land']);
+    renderTable('property',      grouped.property,           sectionFilters.property);
+    renderTable('ebl',           grouped.ebl,                sectionFilters.ebl);
+    renderTable('ebl-flat',      grouped['ebl-flat'],        sectionFilters['ebl-flat']);
 }
 
 function filterSection(section, status, btn) {
@@ -258,12 +329,12 @@ function filterSection(section, status, btn) {
     parent.querySelectorAll('.section-filter-tab').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
-    const grouped = { vehicle: [], cbplc: [], property: [], ebl: [] };
+    const grouped = { vehicle: [], cbplc: [], 'ebl-sme-land': [], property: [], ebl: [], 'ebl-flat': [] };
     allSubmissions.forEach(sub => {
         const t = getFormType(sub);
-        grouped[t].push(sub);
+        if (grouped[t]) grouped[t].push(sub);
     });
-    renderTable(section, grouped[section], status);
+    renderTable(section, grouped[section] || [], status);
 }
 
 function renderTable(section, list, statusFilter) {
@@ -276,15 +347,17 @@ function renderTable(section, list, statusFilter) {
         return;
     }
 
-    const isVehicle  = section === 'vehicle' || section === 'cbplc';
-    const isEBL      = section === 'ebl';
-    const isEBLFlat  = section === 'ebl-flat';
+    const isVehicle     = section === 'vehicle' || section === 'cbplc';
+    const isEBL         = section === 'ebl';
+    const isEBLFlat     = section === 'ebl-flat';
+    const isEBLSMELand  = section === 'ebl-sme-land';
 
-    const formUrl    = isEBLFlat ? 'ebl-flat-form.html'
-                     : isEBL    ? 'ebl-land-building-form.html'
-                     : (section === 'cbplc') ? 'cbplc-vehicle.html'
-                     : isVehicle ? 'form.html'
-                     : 'property-form.html';
+    const formUrl = isEBLFlat    ? 'ebl-flat-form.html'
+                  : isEBL        ? 'ebl-land-building-form.html'
+                  : isEBLSMELand ? 'ebl-sme-land-form.html'
+                  : (section === 'cbplc') ? 'cbplc-vehicle.html'
+                  : isVehicle    ? 'form.html'
+                  : 'property-form.html';
 
     const rows = filtered.map(sub => {
         const fd      = sub.form_data || {};
@@ -295,14 +368,17 @@ function renderTable(section, list, statusFilter) {
         let fileRef, refNo, accountName;
 
         if (section === 'cbplc') {
-            // FIX #7: CBPLC form uses letter_ref and ac_title — not reference_account_name/referred_by
-            //         which are BBPLC-specific fields and will always be blank for CBPLC submissions.
+            // CBPLC form uses letter_ref and ac_title — not reference_account_name/referred_by
             fileRef     = fd.letter_ref || '—';
             refNo       = fd.letter_ref || '—';
             accountName = fd.ac_title   || '—';
         } else if (isEBLFlat) {
             fileRef     = fd.property_location || fd.valuation_ref_no || 'EBL HL Flat';
             refNo       = fd.reference_no || fd.valuation_ref_no || '—';
+            accountName = fd.reference_account_name || '—';
+        } else if (isEBLSMELand) {
+            fileRef     = fd.reference_account_name || fd.reference_no || 'EBL SME Land';
+            refNo       = fd.reference_no || '—';
             accountName = fd.reference_account_name || '—';
         } else if (isVehicle) {
             fileRef     = fd.file_reference_number || fd.letter_ref || '—';
@@ -318,6 +394,10 @@ function renderTable(section, list, statusFilter) {
             ? `<button class="btn btn-sm btn-danger" onclick="deleteSubmission('${sub.id}')">Delete</button>`
             : '';
 
+        const actionBtn = sub.status === 'draft'
+            ? `<a href="${formUrl}?id=${sub.id}" class="btn btn-sm btn-outline">Continue</a>`
+            : `<button class="btn btn-sm btn-outline" disabled title="Submitted reports cannot be edited" style="opacity:0.5;cursor:not-allowed;">View</button>`;
+
         return `<tr>
             <td style="font-weight:500;">${fileRef}</td>
             <td>${refNo}</td>
@@ -326,7 +406,7 @@ function renderTable(section, list, statusFilter) {
             <td>${date}</td>
             <td>
                 <div class="action-buttons">
-                    <a href="${formUrl}?id=${sub.id}" class="btn btn-sm btn-outline">${sub.status === 'draft' ? 'Continue' : 'View'}</a>
+                    ${actionBtn}
                     <button class="btn btn-sm btn-icon-preview" title="Preview PDF" onclick="previewReport('${sub.id}','${section}')">
                         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                     </button>
@@ -339,7 +419,6 @@ function renderTable(section, list, statusFilter) {
 
     const colLabel = isVehicle ? 'File Ref.' : 'Report';
     const col2     = isVehicle ? 'Letter Ref.' : 'Reference No.';
-    // FIX #7: CBPLC shows "A/C Title" instead of generic "Referred By"
     const col3     = (section === 'cbplc') ? 'A/C Title'
                    : isVehicle ? 'Referred By'
                    : 'Account Name';
@@ -370,6 +449,8 @@ async function downloadReport(id, section) {
         }
         if (section === 'property') {
             await PDFEngine.generate(formData, PropertyValuationPDF);
+        } else if (section === 'ebl-sme-land') {
+            await EBLSmeLandPDF.render(formData, null, 'download');
         } else if (section === 'ebl') {
             await PDFEngine.generate(formData, EBLLandBuildingPDF);
         } else if (section === 'ebl-flat') {
@@ -392,8 +473,9 @@ async function previewReport(id, section) {
         }
 
         let template;
-        if (section === 'property')       template = PropertyValuationPDF;
-        else if (section === 'ebl')       template = EBLLandBuildingPDF;
+        if (section === 'property')          template = PropertyValuationPDF;
+        else if (section === 'ebl-sme-land') { const url = await EBLSmeLandPDF.render(formData, null, 'preview'); window.open(url); return; }
+        else if (section === 'ebl')          template = EBLLandBuildingPDF;
         else if (section === 'ebl-flat')  template = EBLFlatPDF;
         else if (section === 'cbplc')     template = CBLVehicleValuationPDF;
         else                              template = VehicleValuationPDF;
@@ -419,8 +501,9 @@ async function deleteSubmission(id) {
     try {
         const { error } = await db.from('submissions').delete().eq('id', id);
         if (error) throw error;
+        sessionStorage.removeItem(CACHE_KEY); // invalidate cache after deletion
         UI.showToast('Draft deleted', 'success');
-        await loadSubmissions();
+        await loadSubmissions(true);
     } catch(err) { UI.showToast('Error: ' + err.message, 'error'); }
 }
 
