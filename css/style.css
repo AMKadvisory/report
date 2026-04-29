@@ -58,7 +58,7 @@ a:hover { color: var(--gold-light); }
 .btn-primary:hover:not(:disabled) { background: var(--gold-light); box-shadow: 0 4px 12px rgba(201,168,76,0.35); color: var(--navy); }
 .btn-secondary { background: var(--navy-mid); color: var(--white); }
 .btn-secondary:hover:not(:disabled) { background: var(--navy-light); color: var(--white); }
-.btn-outline { background: transparent; color: var(--navy); border: 1.5px solid var(--gray-200); }
+.btn-outline { background: white; color: var(--navy); border: 1.5px solid var(--gray-200); }
 .btn-outline:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
 .btn-danger { background: var(--danger); color: white; }
 .btn-danger:hover:not(:disabled) { background: #b91c1c; }
