@@ -66,6 +66,7 @@
                 <a href="property-form.html"          style="display:block;padding:0.75rem 1.25rem;font-size:0.875rem;color:var(--navy);text-decoration:none;transition:background var(--transition);" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='white'">🏠 EBL SME Land &amp; Building</a>
                 <a href="ebl-land-building-form.html" style="display:block;padding:0.75rem 1.25rem;font-size:0.875rem;color:var(--navy);text-decoration:none;transition:background var(--transition);" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='white'">🏗️ EBL HL Land &amp; Building</a>
                 <a href="ebl-flat-form.html"          style="display:block;padding:0.75rem 1.25rem;font-size:0.875rem;color:var(--navy);text-decoration:none;transition:background var(--transition);" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='white'">🏢 EBL HL Flat</a>
+                <a href="ucb-flat-form.html"          style="display:block;padding:0.75rem 1.25rem;font-size:0.875rem;color:var(--navy);text-decoration:none;transition:background var(--transition);" onmouseover="this.style.background='var(--gray-100)'" onmouseout="this.style.background='white'">🏢 UCB HL Flat</a>
             </div>
         </div>
     </div>
@@ -191,6 +192,25 @@
             <div class="empty-table">Loading...</div>
         </div>
     </div>
+
+        <!-- UCB HL Flat Valuation Section -->
+    <div class="submissions-table-wrapper">
+        <div class="table-section-header">
+            <div class="table-section-title">
+                🏢 UCB HL Flat
+                <span class="table-section-count" id="count-ucb-flat">0</span>
+            </div>
+            <div class="section-filter-tabs">
+                <button class="section-filter-tab active" onclick="filterSection('ucb-flat','all',this)">All</button>
+                <button class="section-filter-tab" onclick="filterSection('ucb-flat','draft',this)">Drafts</button>
+                <button class="section-filter-tab" onclick="filterSection('ucb-flat','submitted',this)">Submitted</button>
+                <button class="section-filter-tab" onclick="filterSection('ucb-flat','reviewed',this)">Reviewed</button>
+            </div>
+        </div>
+        <div id="table-ucb-flat">
+            <div class="empty-table">Loading...</div>
+        </div>
+    </div>
 </div>
 
 <div id="toast-container"></div>
@@ -208,12 +228,13 @@
 <script src="forms/cbl-vehicle-valuation/pdf-template.js"></script>
 <script src="forms/ebl-flat/pdf-template.js"></script>
 <script src="forms/ebl-sme-land/pdf-template.js"></script>
+<script src="forms/ucb-flat/pdf-template.js"></script>
 
 <script>
 let currentUserId = null;
 let allSubmissions = [];
 // Track active filter per section
-const sectionFilters = { vehicle: 'all', cbplc: 'all', 'ebl-sme-land': 'all', property: 'all', ebl: 'all', 'ebl-flat': 'all' };
+const sectionFilters = { vehicle: 'all', cbplc: 'all', 'ebl-sme-land': 'all', property: 'all', ebl: 'all', 'ebl-flat': 'all', 'ucb-flat': 'all' };
 
 async function init() {
     const session = await Auth.requireAuth();
@@ -257,7 +278,7 @@ function setCachedSubmissions(data) {
 }
 
 async function loadSubmissions(forceRefresh = false) {
-    const TABLE_IDS = ['table-vehicle','table-cbplc','table-ebl-sme-land','table-property','table-ebl','table-ebl-flat'];
+    const TABLE_IDS = ['table-vehicle','table-cbplc','table-ebl-sme-land','table-property','table-ebl','table-ebl-flat', 'table-ucb-flat'];
 
     // Serve from cache when available and not forced
     if (!forceRefresh) {
@@ -294,6 +315,7 @@ function getFormType(sub) {
     const fd = sub.form_data || {};
     const type = fd._formType || sub.form_type || 'cbplc-vehicle-valuation';
     if (type === 'ebl-flat')         return 'ebl-flat';
+    if (type === 'ucb-flat')         return 'ucb-flat';
     if (type === 'ebl-sme-land')     return 'ebl-sme-land';
     if (type === 'ebl-land-building') return 'ebl';
     if (type === 'property-valuation') return 'property';
@@ -302,7 +324,7 @@ function getFormType(sub) {
 }
 
 function renderAllSections() {
-    const grouped = { vehicle: [], cbplc: [], 'ebl-sme-land': [], property: [], ebl: [], 'ebl-flat': [] };
+    const grouped = { vehicle: [], cbplc: [], 'ebl-sme-land': [], property: [], ebl: [], 'ebl-flat': [], 'ucb-flat': [] };
     allSubmissions.forEach(sub => {
         const t = getFormType(sub);
         grouped[t].push(sub);
@@ -314,6 +336,7 @@ function renderAllSections() {
     document.getElementById('count-property').textContent       = grouped.property.length;
     document.getElementById('count-ebl').textContent            = grouped.ebl.length;
     document.getElementById('count-ebl-flat').textContent       = grouped['ebl-flat'].length;
+    document.getElementById('count-ucb-flat').textContent       = grouped['ucb-flat'].length;
 
     renderTable('vehicle',       grouped.vehicle,            sectionFilters.vehicle);
     renderTable('cbplc',         grouped.cbplc,              sectionFilters.cbplc);
@@ -321,6 +344,7 @@ function renderAllSections() {
     renderTable('property',      grouped.property,           sectionFilters.property);
     renderTable('ebl',           grouped.ebl,                sectionFilters.ebl);
     renderTable('ebl-flat',      grouped['ebl-flat'],        sectionFilters['ebl-flat']);
+    renderTable('ucb-flat',      grouped['ucb-flat'],        sectionFilters['ucb-flat']);
 }
 
 function filterSection(section, status, btn) {
@@ -329,7 +353,7 @@ function filterSection(section, status, btn) {
     parent.querySelectorAll('.section-filter-tab').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
 
-    const grouped = { vehicle: [], cbplc: [], 'ebl-sme-land': [], property: [], ebl: [], 'ebl-flat': [] };
+    const grouped = { vehicle: [], cbplc: [], 'ebl-sme-land': [], property: [], ebl: [], 'ebl-flat': [], 'ucb-flat': [] };
     allSubmissions.forEach(sub => {
         const t = getFormType(sub);
         if (grouped[t]) grouped[t].push(sub);
@@ -351,10 +375,12 @@ function renderTable(section, list, statusFilter) {
     const isEBL         = section === 'ebl';
     const isEBLFlat     = section === 'ebl-flat';
     const isEBLSMELand  = section === 'ebl-sme-land';
+    const isUCBFlat     = section === 'ucb-flat';
 
     const formUrl = isEBLFlat    ? 'ebl-flat-form.html'
                   : isEBL        ? 'ebl-land-building-form.html'
                   : isEBLSMELand ? 'ebl-sme-land-form.html'
+                  : isUCBFlat    ? 'ucb-flat-form.html'
                   : (section === 'cbplc') ? 'cbplc-vehicle.html'
                   : isVehicle    ? 'form.html'
                   : 'property-form.html';
@@ -374,6 +400,10 @@ function renderTable(section, list, statusFilter) {
             accountName = fd.ac_title   || '—';
         } else if (isEBLFlat) {
             fileRef     = fd.property_location || fd.valuation_ref_no || 'EBL HL Flat';
+            refNo       = fd.reference_no || fd.valuation_ref_no || '—';
+            accountName = fd.reference_account_name || '—';
+        } else if (isUCBFlat) {
+            fileRef     = fd.property_location || fd.valuation_ref_no || 'UCB Flat';
             refNo       = fd.reference_no || fd.valuation_ref_no || '—';
             accountName = fd.reference_account_name || '—';
         } else if (isEBLSMELand) {
@@ -477,6 +507,7 @@ async function previewReport(id, section) {
         else if (section === 'ebl-sme-land') { const url = await EBLSmeLandPDF.render(formData, null, 'preview'); window.open(url); return; }
         else if (section === 'ebl')          template = EBLLandBuildingPDF;
         else if (section === 'ebl-flat')  template = EBLFlatPDF;
+        else if (section === 'ucb-flat')  template = UCBFlatPDF;
         else if (section === 'cbplc')     template = CBLVehicleValuationPDF;
         else                              template = VehicleValuationPDF;
 
