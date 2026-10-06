@@ -280,10 +280,10 @@ const CBLVehicleValuationPDF = {
         doc.text('Re: Inspection & Valuation Report of used/pre-owned vehicle', ML, y); y += 8;
         normal(10);
         doc.text('Dear Sir,', ML, y); y += 6;
-        doc.text('Greetings from AMK Associates Limited and Thank You very much for referring us!', ML, y, { maxWidth: CW }); y += 8;
+        doc.text('Greetings from AMK Advisory Limited and Thank You very much for referring us!', ML, y, { maxWidth: CW }); y += 8;
 
         const bodyStr = 'Pursuant to your communication through email, dated: ' + dt('comm_date') +
-            ', we, AMK Associates Limited (\'AMK\') has conducted the inspection and valuation of the referred vehicle.';
+            ', we, AMK Advisory Limited (\'AMK\') has conducted the inspection and valuation of the referred vehicle.';
         const bodyL = doc.splitTextToSize(bodyStr, CW);
         doc.text(bodyL, ML, y); y += bodyL.length*4.5 + 6;
 
