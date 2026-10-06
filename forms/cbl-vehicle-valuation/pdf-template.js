@@ -18,9 +18,10 @@ const CBLVehicleValuationPDF = {
         const MT = 30;
         const ML = 25, MR = 25;
         const CW = PW - ML - MR;
-        const HEADER_W = 127, HEADER_H = 12.7;
-        const FOOTER_H = 10.9;
-        const CONTENT_BOTTOM = PH - FOOTER_H - 2;
+        const HEADER_W = 50;
+        const HEADER_H = HEADER_W * 574 / 1347;
+        const FOOTER_H = PW * 556 / 2485;
+        const CONTENT_BOTTOM = PH - 35;
 
         // ── jsPDF init ───────────────────────────────────────
         const { jsPDF } = window.jspdf;
@@ -78,8 +79,8 @@ const CBLVehicleValuationPDF = {
         });
 
         // ── Load header & footer once ────────────────────────(CHANGE HERE FOR QUALITY)
-        const headerImg = await loadImg('AMK Header.png', 1000, 0.5);  
-        const footerImg = await loadImg('AMK Footer.png', 1000, 0.5);
+        const headerImg = await loadImg('img/AMK Header.png', 1000, 0.5);
+        const footerImg = await loadImg('img/AKM Footer.png', 1000, 0.5);
 
         // ── Draw header/footer on current page ───────────────
         const drawHeaderFooter = () => {
@@ -692,6 +693,30 @@ const CBLVehicleValuationPDF = {
                 doc.text(inst, ML + 26, qy);
                 qy += 5.5;
             });
+        }
+
+        // --- পেজ নম্বর যোগ করার কোড ---
+        const totalPages = doc.internal.getNumberOfPages(); // মোট পেজ সংখ্যা বের করবে
+
+        for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i); // নির্দিষ্ট পেজে যাবে
+            
+            doc.setFont('times', 'normal');
+            doc.setFontSize(9);
+            doc.setTextColor(100, 100, 100); // হালকা ধূসর রঙ (Gray Color)
+            
+            // "Page X of Y" টেক্সট তৈরি
+            const pageText = `Page ${i} of ${totalPages}`;
+            
+            // পেজের প্রস্থ (Width) এবং উচ্চতা (Height) বের করা
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            
+            // টেক্সটটি একদম ডান পাশে এলাইন করার জন্য পজিশন হিসাব
+            const yPosition = pageHeight - 20;
+            
+            // পেজ নম্বর প্রিন্ট করা
+            doc.text(pageText, pageWidth / 2, yPosition, { align:'center' });
         }
 
         // ── Save ─────────────────────────────────────────────
